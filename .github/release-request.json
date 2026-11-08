@@ -1,0 +1,5 @@
+{
+  "version": "0.6.5",
+  "revision": "initial-public-release",
+  "notes": "Canvas Extensions：Windows Figma 桌面端通用扩展注入器。\n\n下载 CanvasExtensions-0.6.5-win-x64.exe，单文件自包含，无需另装 .NET。附送 GIF 画布预览 0.2.8 和纹理批量导出 0.2.6；预装与外置扩展使用相同 module.json 和公共 SDK。保存并退出 Figma 后应用扩展，重新打开文档自动加载。\n\nA modular extension injector for Figma Desktop on Windows. Download the standalone x64 EXE below. Includes two ordinary directory extensions using the same public SDK as custom extensions. GPL-3.0-only; third-party font/icon licenses retained.\n\nSource, SDK, screenshots and build instructions: https://github.com/dreamstring/CanvasExtensions"
+}
