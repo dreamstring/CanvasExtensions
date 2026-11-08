@@ -1,0 +1,1 @@
+{"schemaVersion": 1, "id": "sdk-example", "name": "SDK 示例", "version": "0.1.0", "description": "声明式面板、设置和选区事件示例", "permission": "read-design", "scripts": ["main.js"], "commands": []}

@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"composed-example","name":"组合面板示例","version":"0.1.0","description":"使用组合式 SDK 声明面板与控件","permission":"read-design","scripts":["main.js"],"commands":[]}

@@ -1,0 +1,10 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+class Element{constructor(){this.style={};this.children=[];this.attrs={};}attachShadow(){return this.shadow=new Element();}append(...nodes){this.children.push(...nodes);}setAttribute(k,v){this.attrs[k]=v;}remove(){}}
+const context={document:{createElement:()=>new Element()}};context.window=context;vm.createContext(context);vm.runInContext(fs.readFileSync('runtime/framework.js','utf8'),context);
+const host=context.FigmaExtensions;host.begin('test',[]);const section=host.createSection('test','Title',{collapsible:true,collapsed:true});const heading=section.root.shadow.children[0],toggle=heading.children[0];
+assert.equal(section.body.hidden,true);assert.equal(toggle.attrs['aria-expanded'],'false');assert.match(toggle.innerHTML,/width=16 height=16/);assert.match(toggle.innerHTML,/M8 3v10/);assert.match(heading.style.color,/secondary/);
+heading.onpointerenter();assert.equal(heading.style.color,'var(--color-text,#fff)');heading.onpointerleave();assert.match(heading.style.color,/secondary/);
+toggle.onclick();assert.equal(section.body.hidden,false);heading.onpointerleave();assert.equal(heading.style.color,'var(--color-text,#fff)');assert.equal(toggle.attrs['aria-expanded'],'true');assert.doesNotMatch(toggle.innerHTML,/M8 3v10/);toggle.onclick();assert.equal(section.body.hidden,true);
+console.log('PASS shared section header: 16px SVG, collapsed/expanded state, title color and accessible toggle');
+
+const icons=[];host.componentKit={icon(name){icons.push(name);return new Element();}};Element.prototype.replaceChildren=function(...nodes){this.children=nodes;};const nativeSection=host.createSection('native-test','Native',{collapsible:true,collapsed:true});const nativeToggle=nativeSection.root.shadow.children[0].children[0];nativeToggle.onclick();assert.deepEqual(icons,['plus','minus']);assert.match(nativeToggle.style.cssText,/margin-right:-8px/);console.log('PASS both header states use the shared source-derived icon registry');

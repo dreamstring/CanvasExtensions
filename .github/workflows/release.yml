@@ -1,0 +1,30 @@
+name: Publish standalone
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/release-request.json]
+permissions:
+  contents: write
+concurrency:
+  group: standalone-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: dotnet run --project checks/Checks.csproj -c Release
+      - run: ./build-standalone.ps1
+      - name: Publish EXE and verify download
+        run: node scripts/publish-release.cjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

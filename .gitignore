@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+standalone-*/
+share/
+artifacts/
+checks/export-fixture-*/
+checks/generated/
+*.user
+*.log

@@ -1,0 +1,9 @@
+{
+  "name": "canvas-extensions",
+  "version": "0.6.5",
+  "private": true,
+  "scripts": {
+    "test": "node scripts/check.cjs"
+  },
+  "license": "GPL-3.0-only"
+}

@@ -1,0 +1,1 @@
+{"schemaVersion": 1, "id": "texture-export", "name": "纹理批量导出", "version": "0.2.6", "description": "按 16 倍数或二次幂缩放 PNG，命名后批量导出到指定目录。", "permission": "read-design", "scripts": ["rules.js", "main.js"], "commands": ["exportSelection"], "nativeCapabilities": ["export-png", "open-export-folder", "choose-export-folder"]}

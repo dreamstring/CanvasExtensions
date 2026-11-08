@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"selection-info","name":"选区信息（示例）","version":"1.0.0","description":"展示当前选中的对象数量，演示共用侧栏与生命周期。","permission":"read-design","scripts":["main.js"],"commands":["refresh"]}
