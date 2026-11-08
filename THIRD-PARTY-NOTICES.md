@@ -13,3 +13,5 @@ Figma is a trademark of its respective owner. No Figma executable, application
 archive, private document, user installation record or client backup is shipped.
 Style reference data describes observed UI dimensions and tokens; it is not a
 license to redistribute Figma's application code. See DESIGN-SOURCES.md.
+
+Development-only raster tests use `@napi-rs/canvas` (MIT) and its Skia dependencies. Their licenses remain in the installed npm packages; lockfile pins the test dependency. These packages and test textures are not included in the standalone runtime.

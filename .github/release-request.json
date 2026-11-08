@@ -1,5 +1,5 @@
 {
-  "version": "0.6.5",
-  "revision": "initial-public-release",
-  "notes": "Canvas Extensions：Windows Figma 桌面端通用扩展注入器。\n\n下载 CanvasExtensions-0.6.5-win-x64.exe，单文件自包含，无需另装 .NET。附送 GIF 画布预览 0.2.8 和纹理批量导出 0.2.6；预装与外置扩展使用相同 module.json 和公共 SDK。保存并退出 Figma 后应用扩展，重新打开文档自动加载。\n\nA modular extension injector for Figma Desktop on Windows. Download the standalone x64 EXE below. Includes two ordinary directory extensions using the same public SDK as custom extensions. GPL-3.0-only; third-party font/icon licenses retained.\n\nSource, SDK, screenshots and build instructions: https://github.com/dreamstring/CanvasExtensions"
+  "version": "0.6.6",
+  "revision": "box-nine-slice-accepted",
+  "notes": "新增 Box 九宫格填充 0.1.6：在图片 Fill 弹窗设置百分比／像素边距，保留边角随尺寸重绘，支持恢复原图。修复分数像素边界导致的 GPU 接缝，已通过实机验收。公共挂载接口与兼容资源登记同步更新。\n\n下载 CanvasExtensions-0.6.6-win-x64.exe，自包含单文件。附送 GIF 0.2.8、纹理导出 0.2.6、Box 0.1.6，三个扩展与外置扩展使用相同机制。保存并退出 Figma 后重新应用扩展；现有自定义扩展不会自动覆盖，请从仓库 modules/box 更新 Box 文件。\n\nAdds Box 0.1.6 nine-slice image fill with percentage/pixel margins, resize redraw and source restoration. GPU seams fixed by shared pixel-aligned output boundaries. Includes the three ordinary directory extensions; no .NET installation required. Quit Figma before reapplying. Existing custom module files are preserved, so update an existing Box directory from modules/box when upgrading.\n\nhttps://github.com/dreamstring/CanvasExtensions"
 }

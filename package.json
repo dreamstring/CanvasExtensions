@@ -1,9 +1,13 @@
 {
   "name": "canvas-extensions",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "private": true,
   "scripts": {
-    "test": "node scripts/check.cjs"
+    "test": "node scripts/check.cjs",
+    "test:box-gpu": "node checks/box-gpu-test.cjs"
   },
-  "license": "GPL-3.0-only"
+  "license": "GPL-3.0-only",
+  "devDependencies": {
+    "@napi-rs/canvas": "1.1.0"
+  }
 }

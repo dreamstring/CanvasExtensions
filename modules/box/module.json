@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "box",
+  "name": "Box 九宫格填充",
+  "version": "0.1.6",
+  "description": "图片 Box 九宫格填充，百分比或像素边距与拉伸预览。",
+  "permission": "write-design",
+  "scripts": [
+    "rules.js",
+    "renderer.js",
+    "picker.js",
+    "main.js"
+  ],
+  "commands": [
+    "apply",
+    "restore"
+  ]
+}

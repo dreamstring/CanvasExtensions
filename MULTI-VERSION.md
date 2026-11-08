@@ -19,3 +19,8 @@ UI flow for another machine:
 6. Copy diagnostics including target, version, hashes and structural result for evidence-based profile promotion.
 
 Tests: original installation unchanged; existing verified install/update/restore tests; synthetic second-version fixture (not a real release and never executed) for disabled-mode rejection, default-enabled experimental plan, footer preservation and byte-exact restore; distinct canonical installation identities. Actual registry discovery was tested on this machine only; no other person's computer was accessed.
+# 仓库兼容清单
+
+`runtime/compatibility.json` 随每次构建发布。注入成功后登记版本号、**原版 app.asar SHA-256**、验证范围与证据。安装器按原版哈希匹配，而不是只比较版本号；同版本资源不同仍走实验兼容。
+
+`injection` 只表示安装写入已成功；`startup-and-extensions` 表示还通过启动和扩展验收。Box 等模块的功能验收独立记录。126.11.8 已登记注入、启动和 Box 0.1.6 用户验收；其他模块与工作流的覆盖范围不能据此扩大。不得将仅通过结构检查的版本登记为成功。

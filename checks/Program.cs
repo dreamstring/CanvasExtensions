@@ -20,8 +20,10 @@ static byte[] Fixture(){
 var sandbox=Path.Combine(Path.GetTempPath(),"CanvasExtensions-check-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(sandbox);
 ExtensionCatalog.TestHome=Path.Combine(sandbox,"catalog");Installer.TestHome=Path.Combine(sandbox,"backup");Installer.TestTarget=Path.Combine(sandbox,"app.asar");Installer.TestRunning=()=>false;
 var input=Fixture();File.WriteAllBytes(Installer.Target,input);
+Assert(Installer.KnownResource("65223ed24b6e8107852c71c1784984f13bfe6888fcef27b8c3d2461a81330641"),"repository compatibility registry recognizes accepted injection hash");
+Assert(!Installer.KnownResource(new string('0',64)),"unknown resources remain experimental");
 Asar.VerifyPackedMember(input,"main.js");Assert(Asar.HasFigmaSizeTrailer(input),"synthetic archive trailer");
-var extensions=ExtensionCatalog.List();Assert(extensions.Count==2&&extensions.All(x=>!x.BuiltIn&&x.Error==null),"bundled extensions use ordinary directory manifests");
+var extensions=ExtensionCatalog.List();Assert(extensions.Count==3&&extensions.All(x=>!x.BuiltIn&&x.Error==null),"bundled extensions use ordinary directory manifests");
 var gif=extensions.Single(x=>x.Info.Id=="gif");Assert(gif.Folder.StartsWith(ExtensionCatalog.CustomDirectory),"bundled extension seeded into custom directory");
 File.AppendAllText(Path.Combine(gif.Folder,"main.js"),"\n/* local edit */");ExtensionCatalog.SeedExtensions();Assert(File.ReadAllText(Path.Combine(gif.Folder,"main.js")).EndsWith("/* local edit */"),"local extension edits preserved");
 ExtensionCatalog.SetEnabled("gif",false);Assert(!ExtensionCatalog.List().Single(x=>x.Info.Id=="gif").Enabled,"module selection persisted");ExtensionCatalog.SetEnabled("gif",true);

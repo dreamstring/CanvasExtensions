@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "versions": [
+    {
+      "version": "126.10.7",
+      "originalSha256": "af0f2aa0d8ea138704217fdf23b5589be6dc1d77fd31df8a4465bda09d247ac5",
+      "scope": "startup-and-extensions",
+      "evidence": "Previously accepted desktop startup, GIF preview and texture export."
+    },
+    {
+      "version": "126.11.8",
+      "originalSha256": "65223ed24b6e8107852c71c1784984f13bfe6888fcef27b8c3d2461a81330641",
+      "scope": "startup-and-extensions",
+      "evidence": "2026-11-08: verified original resource hash; desktop startup and Box 0.1.6 accepted by user after GPU seam correction. This does not certify every extension workflow."
+    }
+  ]
+}

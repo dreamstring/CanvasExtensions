@@ -7,6 +7,12 @@ using System.Text.Json.Nodes;
 namespace FigmaGifAssistant;
 public static class Installer {
  public const string SupportedHash="af0f2aa0d8ea138704217fdf23b5589be6dc1d77fd31df8a4465bda09d247ac5";
+ // Repository-owned compatibility evidence ships with every build. A version string alone is insufficient.
+ internal static bool KnownResource(string hash){
+  if(hash==SupportedHash)return true;
+  using var registry=JsonDocument.Parse(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","compatibility.json")));
+  return registry.RootElement.GetProperty("versions").EnumerateArray().Any(row=>row.GetProperty("originalSha256").GetString()==hash&&row.GetProperty("scope").GetString() is "injection" or "startup-and-extensions");
+ }
  public const string InstallationHoldReason="";
  internal static string? TestTarget {get;set;}
  internal static string? TestHome {get;set;}
@@ -22,7 +28,7 @@ public static class Installer {
  public static string StateStamp()=>string.Join(":",new[]{Record,Target,Path.Combine(ExtensionCatalog.Home,"extensions.json")}.Select(path=>File.Exists(path)?File.GetLastWriteTimeUtc(path).Ticks.ToString():"missing"));
  public static string Hash(string path)=>Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
  static bool Running()=>TestRunning?.Invoke()??Process.GetProcessesByName("Figma").Length>0;
- public static string DetectLabel(){if(!File.Exists(Target))return "安装路径已失效，请重新选择 Figma";try{var original=ReadBaseline();return "Figma "+TargetVersion+" · "+(Digest(original)==SupportedHash?"已验证资源":"实验兼容 · 待实机验收")+(IsInstalled()?" · 已注入":"");}catch{return "Figma "+TargetVersion+" · 需要兼容性检查";}}
+ public static string DetectLabel(){if(!File.Exists(Target))return "安装路径已失效，请重新选择 Figma";try{var original=ReadBaseline();return "Figma "+TargetVersion+" · "+(KnownResource(Digest(original))?"已验证注入资源":"实验兼容 · 待实机验收")+(IsInstalled()?" · 已注入":"");}catch{return "Figma "+TargetVersion+" · 需要兼容性检查";}}
  static void CheckExpectedStructure(byte[] bytes){
   if(!Asar.HasFigmaSizeTrailer(bytes))throw new IOException("未识别到已支持的 Figma 长度标记，不能尝试此版本。");
   Asar.VerifyPackedMember(bytes,"main.js");Asar.VerifyPackedMember(bytes,"package.json");
@@ -34,16 +40,16 @@ public static class Installer {
  public static string CompatibilityJson(){
   var current=File.ReadAllBytes(Target);var bytes=current;
   if(File.Exists(Record)){var installed=JsonSerializer.Deserialize<Installation>(File.ReadAllText(Record));if(installed!=null&&installed.Installed==Digest(current)&&string.Equals(installed.Target,Target,StringComparison.OrdinalIgnoreCase)){bytes=File.ReadAllBytes(installed.Backup);if(Digest(bytes)!=installed.Original)throw new IOException("原始备份校验失败。");}}
-  bool known=Digest(bytes)==SupportedHash;string structure="";try{if(!known)CheckExpectedStructure(bytes);}catch(Exception ex){structure=ex.Message;}
+  bool known=KnownResource(Digest(bytes));string structure="";try{if(!known)CheckExpectedStructure(bytes);}catch(Exception ex){structure=ex.Message;}
   return JsonSerializer.Serialize(new {target=Target,version=TargetVersion,current_sha256=Digest(current),original_sha256=Digest(bytes),verified_original=known,structure_compatible=structure.Length==0,structure_error=structure,experimental_selected=ExperimentalCompatibility,note="结构相容不代表启动、控件和运行接口已验证；未知版本仅供实验验收。"},new JsonSerializerOptions{WriteIndented=true,Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping});
  }
  static byte[] ReadBaseline(){
-  var current=File.ReadAllBytes(Target);if(Digest(current)==SupportedHash)return current;
+  var current=File.ReadAllBytes(Target);if(KnownResource(Digest(current)))return current;
   if(File.Exists(Record)){
    var r=JsonSerializer.Deserialize<Installation>(File.ReadAllText(Record))??throw new IOException("安装记录无效。");
    if(!string.Equals(r.Target,Target,StringComparison.OrdinalIgnoreCase)||r.Installed!=Digest(current))throw new IOException("当前资源与此安装位置的记录不匹配，拒绝覆盖。");
    var original=File.ReadAllBytes(r.Backup);if(Digest(original)!=r.Original)throw new IOException("原始备份校验失败。");
-   if(r.Original!=SupportedHash){CheckExpectedStructure(original);if(!ExperimentalCompatibility)throw new IOException("此安装为未验证版本，请重新勾选实验兼容后更新；恢复原版不受影响。");}return original;
+   if(!KnownResource(r.Original)){CheckExpectedStructure(original);if(!ExperimentalCompatibility)throw new IOException("此安装为未验证版本，请重新勾选实验兼容后更新；恢复原版不受影响。");}return original;
   }
   CheckExpectedStructure(current);if(!ExperimentalCompatibility)throw new IOException("Figma "+TargetVersion+" 尚未实机验证。结构检查通过后，可勾选实验兼容进行验收。");return current;
  }
@@ -60,7 +66,7 @@ public static class Installer {
  public static string PlanJson(){
   var original=ReadBaseline(); var payload=Encoding.UTF8.GetBytes(Payload());
   var patched=Asar.AppendMain(original,Loader(Digest(payload)));
-  return JsonSerializer.Serialize(new {version=TargetVersion,compatibility=Digest(original)==SupportedHash?"verified-resource":"experimental-structural-only",target=Target,current_sha256=Hash(Target),original_sha256=Digest(original),expected_sha256=Digest(original),original_bytes=original.Length,proposed_bytes=patched.Length,native_size_trailer_valid=Asar.HasFigmaSizeTrailer(patched),original_size_trailer=Encoding.ASCII.GetString(original,original.Length-8,8),proposed_size_trailer=Encoding.ASCII.GetString(patched,patched.Length-8,8),installation_hold=InstallationHoldReason,proposed_sha256=Digest(patched),payload_sha256=Digest(payload),figma_running=Running(),can_apply=CanApply(),backup=BackupPath,changes=new[]{"main.js 追加加载入口；更新 ASAR 成员偏移和完整性字段","外部本地 payload；不修改 Figma.exe；不关闭进程"},risks=new[]{"客户端加载、侧栏定位、主题尚未运行验收","Figma 更新需要重新检查版本；存在自定义完整性检查的可能","复杂遮罩、透明 GIF、图层合成存在预览限制"}},new JsonSerializerOptions{WriteIndented=true,Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping});
+  return JsonSerializer.Serialize(new {version=TargetVersion,compatibility=KnownResource(Digest(original))?"verified-resource":"experimental-structural-only",target=Target,current_sha256=Hash(Target),original_sha256=Digest(original),expected_sha256=Digest(original),original_bytes=original.Length,proposed_bytes=patched.Length,native_size_trailer_valid=Asar.HasFigmaSizeTrailer(patched),original_size_trailer=Encoding.ASCII.GetString(original,original.Length-8,8),proposed_size_trailer=Encoding.ASCII.GetString(patched,patched.Length-8,8),installation_hold=InstallationHoldReason,proposed_sha256=Digest(patched),payload_sha256=Digest(payload),figma_running=Running(),can_apply=CanApply(),backup=BackupPath,changes=new[]{"main.js 追加加载入口；更新 ASAR 成员偏移和完整性字段","外部本地 payload；不修改 Figma.exe；不关闭进程"},risks=new[]{"客户端加载、侧栏定位、主题尚未运行验收","Figma 更新需要重新检查版本；存在自定义完整性检查的可能","复杂遮罩、透明 GIF、图层合成存在预览限制"}},new JsonSerializerOptions{WriteIndented=true,Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping});
  }
  public static void Apply(string reviewedHash,string reviewedPayload){
 
@@ -147,7 +153,3 @@ public static class Asar {
  static string ToBase36(long value){const string digits="0123456789abcdefghijklmnopqrstuvwxyz";var result=new StringBuilder();do{result.Insert(0,digits[(int)(value%36)]);value/=36;}while(value>0);if(result.Length>8)throw new IOException("Figma size trailer overflow");return result.ToString();}
  static void Walk(JsonObject files,List<JsonObject> members){foreach(var entry in files){var m=entry.Value!.AsObject();if(m["files"] is JsonObject child)Walk(child,members);else if(m["offset"]!=null&&m["unpacked"]?.GetValue<bool>()!=true)members.Add(m);}}
 }
-
-
-
-

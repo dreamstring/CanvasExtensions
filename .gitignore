@@ -7,3 +7,5 @@ checks/export-fixture-*/
 checks/generated/
 *.user
 *.log
+
+node_modules/
