@@ -14,7 +14,7 @@ Canvas Extensions 是一个通用的 Figma 桌面端扩展注入器。主程序�
 
 | 预装扩展 | 独立版本 | 功能 |
 | --- | --- | --- |
-| GIF 画布预览 | 0.2.8 | 在画布上预览 GIF，累加播放、停止所选，切换选择保留其他播放 |
+| GIF 画布预览 | 0.2.9 | 在画布上预览 GIF，累加播放、停止所选，切换选择保留其他播放 |
 | 纹理批量导出 | 0.2.6 | PNG 批量导出，16 倍数／二次幂尺寸、取整规则、命名前缀、手动尺寸和输出目录 |
 | Box 九宫格填充 | 0.1.6 | 图片填充中设置百分比／像素边距，保留边角并随对象尺寸重绘，支持恢复原图 |
 
@@ -102,3 +102,7 @@ Build on Windows with .NET 9 and Node.js 22 using the commands above. Tests use 
 ## License
 
 Copyright © 2026 Dring Qian (dreamstring). Project code: **GPL-3.0-only**, see [LICENSE](LICENSE). Distributed derivatives must provide corresponding source under GPL. Private modifications do not require public release. Font and icon licenses are retained in `references/`; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+GIF 空闲识别采用有限预算：每次选区识别最多读取 8 张未缓存图片、并发 2 张，250ms 后不再启动新读取；未完成的识别可点击 Preview 继续。识别不会启动动画，已读取的签名会缓存复用。Figma 的图片接口需要读取完整图片，单张大图仍可能有短暂开销。
+
+Idle GIF detection is bounded to 8 uncached images per inspection with 2 concurrent reads; no new reads start after 250ms. Click Preview to scan deferred images. Detection does not start animation and reuses cached signatures. The image API reads complete files, so an individual large image can still incur a temporary cost.

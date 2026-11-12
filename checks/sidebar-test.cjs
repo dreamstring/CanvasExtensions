@@ -43,5 +43,8 @@ function setup(anchorPresent=true){
  const slowPanel=c.stack.children[2],slowBody=slowPanel.shadowRoot.children[1];assert.equal(slowBody.children[0].children[0].disabled,true,'Preview disabled during recognition');assert.match(slowBody.children[1].children[3].textContent,/正在识别/);
  finishSlow({gifCount:2});await flush();assert.equal(c.context.FigmaAssistant.status().inspecting,false);assert.equal(slowBody.children[0].children[0].disabled,false);
  c.engine.inspectSelection=()=>new Promise(resolve=>finishSlow=resolve);c.handlers.get('selectionchange')();c.engine.hasImageSelection=()=>false;c.context.figma.currentPage.selection=[];c.handlers.get('selectionchange')();finishSlow({gifCount:2});await flush();assert.equal(c.context.FigmaAssistant.status().sidebarMounted,false,'cancel selection hides pending panel and ignores late results');c.context.FigmaAssistant.dispose();
+ const deferred=setup();await flush();deferred.engine.inspectSelection=async()=>({gifCount:0,unknownCount:12,failedCount:0});deferred.handlers.get('selectionchange')();await flush();
+ assert.equal(deferred.context.FigmaAssistant.status().sidebarMounted,true,'deferred images keep Preview accessible');
+ const deferredBody=deferred.stack.children[2].shadowRoot.children[1];assert.equal(deferredBody.children[0].children[0].disabled,false);assert.match(deferredBody.children[1].children[3].textContent,/Preview/);deferred.context.FigmaAssistant.dispose();
  console.log('PASS sidebar: whole Export boundary, expansion, GIF selection gating, persistence, selected Stop, async race, cleanup');
 })();

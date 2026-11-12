@@ -149,47 +149,87 @@
     items.length = 0; root.replaceChildren(); state.gifs = 0;
   }
   function selectedNodes() {
-    const nodes = [], seen = new Set();
-    const visit = node => { if (seen.has(node.id)) return; seen.add(node.id); nodes.push(node); for (const child of node.children || []) visit(child); };
-    for (const node of api.currentPage.selection) visit(node);
+    const nodes = [], seen = new Set(), stack = [...api.currentPage.selection].reverse();
+    while (stack.length) {
+      const node = stack.pop();
+      if (seen.has(node.id) || node.removed || node.visible === false) continue;
+      seen.add(node.id); nodes.push(node);
+      for (let i = (node.children?.length || 0) - 1; i >= 0; i--) stack.push(node.children[i]);
+    }
     return nodes;
   }
   function reset() { inspectionSerial++; stop(); clearItems(); suppressed.clear(); signatureCache.clear(); return { ...state }; }
-  function selectedPlayingCount() { const ids = new Set(selectedNodes().map(node => node.id)); return new Set(items.filter(item => ids.has(item.node.id) && state.running && item.image.src).map(item => item.node.id)).size; }
+  function selectedPlayingCount() {
+    if (!state.running || !items.length) return 0;
+    const ids = new Set(api.currentPage.selection.map(node => node.id));
+    return new Set(items.filter(item => {
+      if (!item.image.src) return false;
+      const seen = new Set();
+      for (let node = item.node; node && !seen.has(node.id); node = node.parent) {
+        if (ids.has(node.id)) return true;
+        seen.add(node.id);
+      }
+      return false;
+    }).map(item => item.node.id)).size;
+  }
   let inspectionSerial = 0;
   function cancelInspection() { inspectionSerial++; }
   const isImagePaint = paint => paint.type === 'IMAGE' && paint.imageHash && paint.visible !== false;
-  function hasImageSelection() { return selectedNodes().some(node => Array.isArray(node.fills) && node.fills.some(isImagePaint)); }
+  function hasImageSelection() {
+    return api.currentPage.selection.some(node => node.visible !== false &&
+      (node.children?.length || Array.isArray(node.fills) && node.fills.some(isImagePaint)));
+  }
   async function inspectSelection() {
     const token = ++inspectionSerial, inspectedPage = api.currentPage.id;
-    const nodes = selectedNodes().filter(node => Array.isArray(node.fills) && node.fills.some(isImagePaint));
-    let next = 0, gifCount = 0, failedCount = 0;
     const live = () => !disposed && token === inspectionSerial && inspectedPage === api.currentPage.id;
+    const nodes = [], seen = new Set(), stack = [...api.currentPage.selection].reverse();
+    let visited = 0;
+    // Large cached selections also yield, allowing selection changes to cancel traversal.
+    while (stack.length && live()) {
+      const node = stack.pop();
+      if (seen.has(node.id) || node.removed || node.visible === false) continue;
+      seen.add(node.id);
+      if (Array.isArray(node.fills) && node.fills.some(isImagePaint)) nodes.push(node);
+      for (let i = (node.children?.length || 0) - 1; i >= 0; i--) stack.push(node.children[i]);
+      if (++visited % 64 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    let next = 0, gifCount = 0, failedCount = 0, unknownCount = 0, reads = 0;
+    const started = performance.now();
     async function worker() {
       while (live() && next < nodes.length) {
-        const node = nodes[next++];
+        const node = nodes[next++]; let unknown = false, gif = false;
         for (const paint of node.fills) {
           if (!isImagePaint(paint) || !live()) continue;
           if (!signatureCache.has(paint.imageHash)) {
+            // Budget automatic reads; Preview explicitly scans the entire selection.
+            if (reads >= 8 || performance.now() - started >= 250) { unknown = true; continue; }
+            reads++;
             if (signatureCache.size >= 512) signatureCache.delete(signatureCache.keys().next().value);
-            const pending = Promise.resolve().then(() => api.getImageByHash(paint.imageHash).getBytesAsync()).then(isGif);
+            const pending = Promise.resolve().then(() => {
+              if (!live()) return undefined;
+              const image = api.getImageByHash(paint.imageHash);
+              if (!image) throw Error('Image unavailable');
+              return image.getBytesAsync().then(isGif);
+            });
             signatureCache.set(paint.imageHash, pending);
           }
           const pending = signatureCache.get(paint.imageHash);
           try {
-            const gif = await pending;
+            const result = await pending;
             if (!live()) return;
-            if (gif) { gifCount++; break; }
+            if (result === undefined) { signatureCache.delete(paint.imageHash); unknown = true; }
+            if (result) { gif = true; break; }
           } catch (_) {
             if (signatureCache.get(paint.imageHash) === pending) signatureCache.delete(paint.imageHash);
             if (!live()) return;
-            failedCount++;
+            failedCount++; unknown = true;
           }
         }
+        if (gif) gifCount++; else if (unknown) unknownCount++;
       }
     }
-    await Promise.all(Array.from({ length: Math.min(4, nodes.length) }, worker));
-    return live() ? { gifCount, failedCount } : { gifCount: 0, failedCount: 0 };
+    await Promise.all(Array.from({ length: Math.min(2, nodes.length) }, worker));
+    return live() ? { gifCount, failedCount, unknownCount } : { gifCount: 0, failedCount: 0, unknownCount: 0 };
   }
   function stopSelected() {
     const ids = new Set(selectedNodes().map(node => node.id));
@@ -223,7 +263,10 @@
           bytes = existing?.bytes ?? await api.getImageByHash(paint.imageHash).getBytesAsync();
           if (disposed || token !== serial) return;
           if (suppressed.has(node.id)) continue;
-          bytes = isGif(bytes) ? bytes : null;
+          const gif = isGif(bytes);
+          if (signatureCache.size >= 512) signatureCache.delete(signatureCache.keys().next().value);
+          signatureCache.set(paint.imageHash, Promise.resolve(gif));
+          bytes = gif ? bytes : null;
           cache.set(paint.imageHash, bytes);
         }
         if (!bytes) continue;
