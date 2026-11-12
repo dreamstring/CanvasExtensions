@@ -4,7 +4,7 @@
   window.FigmaGifStartup?.dispose();
   if (!window.FigmaExtensions) window.FigmaAssistant?.dispose();
   const api = window.figma, engine = window.FigmaCanvasGif;
-  let disposed = false, queued = false, selectionSerial = 0, selectedGifs = 0, unknownImages = 0, lastSelectionKey = '', inspecting = false, inspectionFailed = false;
+  let disposed = false, queued = false, selectedGifs = 0, unknownImages = 0, lastSelectionKey = '', inspecting = false, inspectionFailed = false;
   const panel = document.createElement('section');
   panel.dataset.figmaAssistant = 'gif'; panel.setAttribute('aria-label', 'GIF preview');
   Object.assign(panel.style, { display: 'block', position: 'relative', width: '100%', minWidth: '0',
@@ -61,7 +61,7 @@
     preview.style.background = selectedPlaying > 0 ? 'var(--color-bg-tertiary, #444)' : 'transparent';
     stop.style.background = 'transparent';
   }
-  async function playSelection() { try { await engine.scan(); } catch (error) { engine.status.errors.push(String(error)); } await inspect(true); update(); return snapshot(); }
+  async function playSelection() { try { await engine.scan(); } catch (error) { engine.status.errors.push(String(error)); } await selectionWatcher.refresh({immediate:true}); update(); return snapshot(); }
   function halt() { engine.stopSelected(); update(); return snapshot(); }
   preview.onclick = playSelection; stop.onclick = halt;
   const sectionNames = /^(Effects|Stroke|Fill|Appearance|Layout|Position|Styles|Page|效果|描边|填充|外观|布局|位置|样式|页面)$/;
@@ -92,32 +92,25 @@
     update();
   }
   function schedule() { if (!queued && !disposed) { queued = true; queueMicrotask(place); } }
-  let inspectionTimer = null, finishDelay = null;
-  async function inspect(immediate = false) {
-    clearTimeout(inspectionTimer); finishDelay?.(); finishDelay = null;
-    lastSelectionKey = selectionKey();
-    const token = ++selectionSerial; selectedGifs = 0; unknownImages = 0; inspectionFailed = false; engine.cancelInspection?.();
-    inspecting = engine.hasImageSelection();
-    place(); update();
-    if (!inspecting) { engine.cancelInspection?.(); return; }
-    if (!immediate) {
-      await new Promise(resolve => { finishDelay = resolve; inspectionTimer = setTimeout(resolve, 250); });
-      if (disposed || token !== selectionSerial) return;
-    }
-    try { const result = await engine.inspectSelection(); if (disposed || token !== selectionSerial) return; selectedGifs = result.gifCount; unknownImages = result.unknownCount || 0; inspectionFailed = result.failedCount > 0; }
-    catch (_) { if (disposed || token !== selectionSerial) return; selectedGifs = 0; inspectionFailed = true; }
-    inspecting = false;
-    schedule(); update();
-  }
+  const selectionWatcher=window.CanvasExtensionServices.watchSelection(api,{
+    delay:250,poll:0,initial:false,
+    onStart(){lastSelectionKey=selectionKey();selectedGifs=0;unknownImages=0;inspectionFailed=false;engine.cancelInspection?.();inspecting=engine.hasImageSelection();place();update();},
+    async run(_,task){
+      if(!engine.hasImageSelection()){task.commit(()=>{inspecting=false;schedule();update();});return;}
+      const result=await engine.inspectSelection();
+      if(!task.current())return;
+      task.commit(()=>{selectedGifs=result.gifCount;unknownImages=result.unknownCount||0;inspectionFailed=result.failedCount>0;inspecting=false;schedule();update();});
+    },
+    onError(){selectedGifs=0;unknownImages=0;inspectionFailed=true;inspecting=false;schedule();update();}
+  });
   const observer = new MutationObserver(schedule);
   observer.observe(document.body, { childList: true, subtree: true });
-  const selectionChanged = () => { inspect(); };
-  const pageChanged = () => { engine.reset(); inspect(); };
-  api.on?.('selectionchange', selectionChanged); api.on?.('currentpagechange', pageChanged);
+  const pageChanged = () => { engine.reset(); update(); };
+  api.on?.('currentpagechange', pageChanged);
   function selectionKey() { return `${api.currentPage?.id ?? ''}:${(api.currentPage?.selection ?? []).map(node => node.id).join(',')}`; }
-  const timer = setInterval(() => { if (selectionKey() !== lastSelectionKey) inspect(); update(); }, 400);
+  const timer = setInterval(() => { if (selectionKey() !== lastSelectionKey) selectionWatcher.refresh(); update(); }, 400);
   const modules = Object.freeze({ gif: Object.freeze({ readOnly: true, commands: Object.freeze({ previewSelection: playSelection, stop: halt }) }) });
-  function snapshot() { return { version: '0.2.10', sidebarMounted: panel.isConnected, selectedGifs, unknownImages, inspecting, inspectionFailed, module: 'gif', ...engine.status }; }
+  function snapshot() { return { version: '0.2.11', sidebarMounted: panel.isConnected, selectedGifs, unknownImages, inspecting, inspectionFailed, module: 'gif', ...engine.status }; }
   window.FigmaAssistant = {
     modules, status: snapshot, isLive: () => !disposed && engine.isLive(),
     async command(module, action) {
@@ -126,11 +119,10 @@
       return await method();
     },
     dispose() {
-      if (disposed) return; disposed = true; selectionSerial++; observer.disconnect(); clearInterval(timer); clearTimeout(inspectionTimer); finishDelay?.();
-      api.off?.('selectionchange', selectionChanged); api.off?.('currentpagechange', pageChanged);
+      if (disposed) return; disposed = true; selectionWatcher.dispose(); observer.disconnect(); clearInterval(timer);
+      api.off?.('currentpagechange', pageChanged);
       releaseUi?.();panel.remove(); engine.dispose();
     }
   };
-  inspect(); update();
+  selectionWatcher.refresh(); update();
 })();
-

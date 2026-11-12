@@ -3,7 +3,7 @@ class Element{constructor(){this.children=[];this.style={setProperty(){}};this.c
 const values=new Map(),listeners=new Map();let registered,shown,disposed=0;
 const host={createSection(){return {body:new Element(),root:{isConnected:true},show(v){shown=v;},dispose(){disposed++;}};},register(id,m){registered=m;}};
 const context={window:{FigmaExtensions:host,figma:{currentPage:{selection:[{id:'1'}]},on(e,f){listeners.set(e,f);},off(e){listeners.delete(e);}}},localStorage:{getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)},document:{createElement:()=>new Element()},setInterval,clearInterval};
-vm.createContext(context);vm.runInContext(fs.readFileSync('runtime/sdk.js','utf8'),context);
+vm.createContext(context);vm.runInContext(fs.readFileSync('runtime/services.js','utf8'),context);vm.runInContext(fs.readFileSync('runtime/editor-services.js','utf8'),context);vm.runInContext(fs.readFileSync('runtime/sdk.js','utf8'),context);
 vm.runInContext(fs.readFileSync('templates/sdk-example/main.js','utf8'),context);
 assert.equal(shown,true);assert.equal(listeners.size,2);
 // Capture a second panel so test can inspect its fields through the public context.

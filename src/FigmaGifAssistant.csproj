@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net9.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
-    <ApplicationIcon>Assets/app.ico</ApplicationIcon><Version>0.6.8</Version>
+    <ApplicationIcon>Assets/app.ico</ApplicationIcon><Version>0.7.0</Version>
     <Authors>Dring Qian (dreamstring)</Authors><Product>Canvas Extensions</Product><PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup><Resource Include="Assets/app.ico"/></ItemGroup>
@@ -11,7 +11,7 @@
    <EmbeddedResource Include="../modules/**" LogicalName="Bundle/modules/%(RecursiveDir)%(Filename)%(Extension)"/>
    <EmbeddedResource Include="../templates/**" LogicalName="Bundle/templates/%(RecursiveDir)%(Filename)%(Extension)"/>
    <EmbeddedResource Include="../references/*LICENSE*" LogicalName="Bundle/licenses/%(Filename)%(Extension)"/>
-   <EmbeddedResource Include="../README.md;../EXTENSIONS.md;../DESIGN-SOURCES.md;../TEXTURE-EXPORT.md;../SDK.md;../NATIVE-UI.md;../COMPONENT-LIBRARY.md;../SDK-COMPONENTS.md;../MULTI-VERSION.md;../THIRD-PARTY-NOTICES.md" LogicalName="Bundle/docs/%(Filename)%(Extension)"/>
+   <EmbeddedResource Include="../README.md;../EXTENSIONS.md;../DESIGN-SOURCES.md;../TEXTURE-EXPORT.md;../SDK.md;../SDK-SERVICES.md;../NATIVE-UI.md;../COMPONENT-LIBRARY.md;../SDK-COMPONENTS.md;../MULTI-VERSION.md;../THIRD-PARTY-NOTICES.md" LogicalName="Bundle/docs/%(Filename)%(Extension)"/>
    <EmbeddedResource Include="../LICENSE" LogicalName="Bundle/licenses/CanvasExtensions-LICENSE.txt"/>
   </ItemGroup>
   <ItemGroup><Content Include="../runtime/**" Link="runtime/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" /><Content Include="../modules/**" Link="modules/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/><Resource Include="Assets/Inter.ttf"/><Content Include="../templates/**" Link="templates/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/><Content Include="../references/*LICENSE*" Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/></ItemGroup>

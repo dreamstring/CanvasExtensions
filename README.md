@@ -14,9 +14,11 @@ Canvas Extensions 是一个通用的 Figma 桌面端扩展注入器。主程序�
 
 | 预装扩展 | 独立版本 | 功能 |
 | --- | --- | --- |
-| [GIF 画布预览](modules/gif/README.md) | 0.2.10 | 在画布上预览 GIF，累加播放、停止所选，切换选择保留其他播放 |
-| [纹理批量导出](modules/texture-export/README.md) | 0.2.6 | PNG 批量导出，16 倍数／二次幂尺寸、取整规则、命名前缀、手动尺寸和输出目录 |
-| [Box 九宫格填充](modules/box/README.md) | 0.1.6 | 图片填充中设置百分比／像素边距，保留边角并随对象尺寸重绘，支持恢复原图 |
+| [GIF 画布预览](modules/gif/README.md) | 0.2.11 | 在画布上预览 GIF，累加播放、停止所选，切换选择保留其他播放 |
+| [纹理批量导出](modules/texture-export/README.md) | 0.2.7 | PNG 批量导出，16 倍数／二次幂尺寸、取整规则、命名前缀、手动尺寸和输出目录 |
+| [Box 九宫格填充](modules/box/README.md) | 0.1.7 | 图片填充中设置百分比／像素边距，保留边角并随对象尺寸重绘，支持恢复原图 |
+
+源码开发版本：**0.7.0 / SDK 2.1**，上述扩展版本属于此源码；已发布发行包不自动升级。
 
 当前发行包：**0.6.6-r2**。`r2` 表示同一主程序版本的第二次打包修订；主程序和各扩展仍独立编号。
 
@@ -110,4 +112,3 @@ Module guides: [GIF](modules/gif/README.md) · [Texture export](modules/texture-
 ## License
 
 Copyright © 2026 Dring Qian (dreamstring). Project code: **GPL-3.0-only**, see [LICENSE](LICENSE). Distributed derivatives must provide corresponding source under GPL. Private modifications do not require public release. Font and icon licenses are retained in `references/`; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
-

@@ -3,9 +3,9 @@ const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_pro
 const chrome=process.env.BOX_CHROME||['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(p=>fs.existsSync(p));
 if(!chrome)throw Error('Set BOX_CHROME to a Chromium executable to run this GPU check');
 const folder=path.resolve('artifacts/box-gpu-check');fs.mkdirSync(folder,{recursive:true});
-const code=fs.readFileSync('modules/box/rules.js','utf8');
+const code=fs.readFileSync('runtime/services.js','utf8');
 const old=code.replace('x.d=x.d.map(v=>Math.round(v*outputScale));y.d=y.d.map(v=>Math.round(v*outputScale));','x.d=x.d.map(v=>v*outputScale);y.d=y.d.map(v=>v*outputScale);');
-function wrap(source){return `(()=>{const module={exports:{}};${source}\nreturn module.exports;})()`;}
+function wrap(source){return `(()=>{const module={exports:{}};${source}\nreturn module.exports.nineSlice;})()`;}
 const html=`<!doctype html><body>pending<script>(async()=>{
  const fixed=${wrap(code)},legacy=${wrap(old)};
  const source=document.createElement('canvas');source.width=118;source.height=52;const s=source.getContext('2d');s.fillStyle='rgba(255,255,255,0.7)';s.fillRect(0,0,118,52);

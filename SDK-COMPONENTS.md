@@ -62,3 +62,5 @@ Remaining: full native mouse/keyboard state comparison; normal checkbox (live sa
 ## Versioning
 
 Host/SDK changes: host version 0.5.1. This pass does not bump GIF or texture module versions. Existing extensions continue using their own custom panel bodies; adopting `compose()` can be done independently after visual regression checks. No silent rewrite of their business logic.
+
+SDK 2.1 增加 path、imagePreview 声明与公共目录/预览组件，详见 [公共服务](SDK-SERVICES.md#公共控件与清理)。

@@ -4,7 +4,7 @@
 
 ## 概览
 
-版本 **0.2.10** · 模块 ID `gif` · 权限 `read-design`。与其他预装和外置扩展使用相同加载机制。
+版本 **0.2.11** · 模块 ID `gif` · 权限 `read-design`。与其他预装和外置扩展使用相同加载机制。
 
 ## 使用
 
@@ -22,6 +22,8 @@
 
 当前支持无子层的 Rectangle、Frame、Component、Instance，Fill/Fit 映射。填充旋转、蒙版及部分混合模式不支持；复杂裁剪、层级和透明底图有限制。单张大图读取仍可能有短暂开销，播放有解码和布局开销。
 
+需要宿主 SDK 2.1（主程序 0.7.0 起）。模块采用公共任务、图片与生命周期能力；旧主程序无法加载这些新增调用，升级时先更新主程序并重新应用。
+
 ## 开发
 
 - `engine.js`：签名、缓存、资源、播放和几何同步。
@@ -35,4 +37,4 @@
 
 ## English
 
-Read-only GIF preview 0.2.10 uses browser overlays without changing design nodes. Preview adds animations; Stop affects the selection. Idle detection is debounced and bounded, while container descendants require Preview. Complex compositing is limited. Source files and validation scope are listed above.
+Read-only GIF preview 0.2.11 uses browser overlays without changing design nodes. Preview adds animations; Stop affects the selection. Idle detection is debounced and bounded, while container descendants require Preview. Complex compositing is limited. Source files and validation scope are listed above.

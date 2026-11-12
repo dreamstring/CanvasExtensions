@@ -34,7 +34,7 @@ function setup() {
     figma:{currentPage:{id:'page',selection:nodes},viewport:{bounds:{x:100,y:200,width:1000,height:800},zoom:1},
       getImageByHash:h=>({getBytesAsync:async()=>h==='png'?Uint8Array.from([137,80,78,71]):gif})},
     addEventListener(){},removeEventListener(){} };
-  context.window=context; vm.runInNewContext(source,context);
+  context.CanvasExtensionServices=require("../runtime/editor-services.js");context.window=context; vm.runInNewContext(source,context);
   return {context,elements,callbacks,revoked,nodes};
 }
 (async()=>{
@@ -53,14 +53,14 @@ function setup() {
 
   const b=setup();let finish;
   b.context.figma.getImageByHash=()=>({getBytesAsync:()=>new Promise(r=>{finish=r})});
-  const pending=b.context.FigmaCanvasGif.scan(); b.context.FigmaCanvasGif.dispose();
+  const pending=b.context.FigmaCanvasGif.scan(); await new Promise(r=>setImmediate(r)); b.context.FigmaCanvasGif.dispose();
   finish(Uint8Array.from([71,73,70,56,57,97]));await pending;
   assert.equal(b.context.FigmaCanvasGif.status.running,false);
   assert.equal(b.callbacks.size,0,'dispose cancels async mounting');
   const c=setup();c.context.figma.currentPage.selection=[c.nodes[0]];
   await c.context.FigmaCanvasGif.scan();assert.equal(c.context.FigmaCanvasGif.status.gifs,1,'only selection is scanned');c.context.FigmaCanvasGif.dispose();
   const d=setup();let release;d.context.figma.getImageByHash=()=>({getBytesAsync:()=>new Promise(r=>release=r)});
-  const loading=d.context.FigmaCanvasGif.scan();d.context.FigmaCanvasGif.stop();release(Uint8Array.from([71,73,70,56,57,97]));await loading;
+  const loading=d.context.FigmaCanvasGif.scan();await new Promise(r=>setImmediate(r));d.context.FigmaCanvasGif.stop();release(Uint8Array.from([71,73,70,56,57,97]));await loading;
   assert.equal(d.context.FigmaCanvasGif.status.gifs,0,'stop cancels pending scan');assert.equal(d.context.FigmaCanvasGif.status.running,false);d.context.FigmaCanvasGif.dispose();
   const e=setup();e.context.figma.currentPage.selection=[e.nodes[0]];
   await e.context.FigmaCanvasGif.scan();const imageA=e.elements.find(x=>x.type==='img');const sourceA=imageA.src;
@@ -71,7 +71,7 @@ function setup() {
   e.context.FigmaCanvasGif.stopSelected();assert.equal(e.context.FigmaCanvasGif.status.gifs,0);assert.equal(e.context.FigmaCanvasGif.status.running,false);assert.equal(e.revoked.length,2,'selected Stop revokes selected image URLs');e.context.FigmaCanvasGif.dispose();
   const f=setup();f.context.figma.currentPage.selection=[f.nodes[0]];await f.context.FigmaCanvasGif.scan();
   f.context.figma.currentPage.selection=[f.nodes[2]];let resolveB;f.context.figma.getImageByHash=()=>({getBytesAsync:()=>new Promise(r=>resolveB=r)});
-  const pendingB=f.context.FigmaCanvasGif.scan();f.context.FigmaCanvasGif.stopSelected();resolveB(Uint8Array.from([71,73,70,56,57,97]));await pendingB;
+  const pendingB=f.context.FigmaCanvasGif.scan();await new Promise(r=>setImmediate(r));f.context.FigmaCanvasGif.stopSelected();resolveB(Uint8Array.from([71,73,70,56,57,97]));await pendingB;
   assert.equal(f.context.FigmaCanvasGif.status.gifs,1,'Stop cancels selected pending B without stopping A');assert.equal(f.context.FigmaCanvasGif.status.running,true);f.context.FigmaCanvasGif.reset();assert.equal(f.context.FigmaCanvasGif.status.gifs,0,'page reset clears everything');f.context.FigmaCanvasGif.dispose();
   const g=setup();let reads=0;const getImage=g.context.figma.getImageByHash;
   g.context.figma.getImageByHash=h=>{reads++;return getImage(h)};
@@ -112,6 +112,6 @@ function setup() {
   timed.context.figma.currentPage.selection=Array.from({length:10},(_,i)=>({...timed.nodes[0],id:'t'+i,fills:[{...timed.nodes[0].fills[0],imageHash:'t'+i}]}));
   timed.context.figma.getImageByHash=()=>({getBytesAsync:async()=>{timedReads++;clock=300;return Uint8Array.from([71,73,70,56,57,97]);}});
   const timedResult=await timed.context.FigmaCanvasGif.inspectSelection();assert.equal(timedReads,1,'elapsed budget stops new reads after in-flight pair');assert.equal(timedResult.unknownCount,9);timed.context.FigmaCanvasGif.dispose();
+  const nested=setup(),group={id:'parent',type:'FRAME',children:[]};const child={...nested.nodes[0],parent:group};group.children=[child];nested.context.figma.currentPage.selection=[group];await nested.context.FigmaCanvasGif.scan();assert.equal(nested.context.FigmaCanvasGif.selectedPlayingCount(),1);nested.context.FigmaCanvasGif.stopSelected();assert.equal(nested.context.FigmaCanvasGif.status.gifs,0,'selected parent stops descendant through shared ancestry helper');nested.context.FigmaCanvasGif.dispose();
   console.log('PASS: bounded parallel recognition, signature selection/cache, additive playback, selected Stop, viewport mapping, cleanup, unchanged design nodes');
 })();
-

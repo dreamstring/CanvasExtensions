@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"services-example","name":"公共服务示例","version":"0.1.0","minimumSdk":"2.1","description":"选区任务、进度与目录控件示例","permission":"read-design","nativeCapabilities":["choose-export-folder"],"scripts":["main.js"],"commands":["inspect"]}

@@ -20,7 +20,8 @@
     gifs: 0, visible: 0, skipped: 0, errors: [], pageId };
   const items = [];
   const suppressed = new Set();
-  const signatureCache = new Map();
+  const services=window.CanvasExtensionServices;
+  let imageResources=services.editorImages(api);
   let serial = 0, raf = 0, disposed = false, lastGeometry = 0, lastViewport = '', dragging = false;
 
   const root = document.createElement('div');
@@ -54,10 +55,7 @@
     toggle.disabled = state.loading;
     controls.title = `画布内预览，不使用插件面板。跳过 ${state.skipped} 项；错误 ${state.errors.length} 项。`;
   }
-  function isGif(bytes) {
-    return bytes.length >= 6 && bytes[0] === 71 && bytes[1] === 73 && bytes[2] === 70 &&
-      bytes[3] === 56 && (bytes[4] === 55 || bytes[4] === 57) && bytes[5] === 97;
-  }
+  const isGif=bytes=>services.format(bytes)==='gif';
   function quad(node, bounds, zoom) {
     const t = node.absoluteTransform, w = node.width, h = node.height;
     return [[0, 0], [w, 0], [w, h], [0, h]].map(([x, y]) => [
@@ -148,30 +146,13 @@
     for (const item of items) { item.image.removeAttribute('src'); URL.revokeObjectURL(item.url); }
     items.length = 0; root.replaceChildren(); state.gifs = 0;
   }
-  function selectedNodes() {
-    const nodes = [], seen = new Set(), stack = [...api.currentPage.selection].reverse();
-    while (stack.length) {
-      const node = stack.pop();
-      if (seen.has(node.id) || node.removed || node.visible === false) continue;
-      seen.add(node.id); nodes.push(node);
-      for (let i = (node.children?.length || 0) - 1; i >= 0; i--) stack.push(node.children[i]);
-    }
-    return nodes;
-  }
-  function reset() { inspectionSerial++; stop(); clearItems(); suppressed.clear(); signatureCache.clear(); return { ...state }; }
+  function reset() { inspectionSerial++; stop(); clearItems(); suppressed.clear(); imageResources.dispose(); imageResources=services.editorImages(api); return { ...state }; }
   function selectedPlayingCount() {
     if (!state.running || !items.length) return 0;
     const ids = new Set(api.currentPage.selection.map(node => node.id));
-    return new Set(items.filter(item => {
-      if (!item.image.src) return false;
-      const seen = new Set();
-      for (let node = item.node; node && !seen.has(node.id); node = node.parent) {
-        if (ids.has(node.id)) return true;
-        seen.add(node.id);
-      }
-      return false;
-    }).map(item => item.node.id)).size;
+    return new Set(items.filter(item => item.image.src&&services.selectionContains(item.node,ids)).map(item=>item.node.id)).size;
   }
+
   let inspectionSerial = 0;
   function cancelInspection() { inspectionSerial++; }
   const isImagePaint = paint => paint.type === 'IMAGE' && paint.imageHash && paint.visible !== false;
@@ -198,30 +179,17 @@
         const node = nodes[next++]; let unknown = false, gif = false;
         for (const paint of node.fills) {
           if (!isImagePaint(paint) || !live()) continue;
-          if (!signatureCache.has(paint.imageHash)) {
-            // Budget automatic reads; Preview explicitly scans the entire selection.
-            if (reads >= 8 || performance.now() - started >= 250) { unknown = true; continue; }
-            reads++;
-            if (signatureCache.size >= 512) signatureCache.delete(signatureCache.keys().next().value);
-            const pending = Promise.resolve().then(() => {
-              if (!live()) return undefined;
-              const image = api.getImageByHash(paint.imageHash);
-              if (!image) throw Error('Image unavailable');
-              return image.getBytesAsync().then(isGif);
-            });
-            signatureCache.set(paint.imageHash, pending);
-          }
-          const pending = signatureCache.get(paint.imageHash);
           try {
-            const result = await pending;
-            if (!live()) return;
-            if (result === undefined) { signatureCache.delete(paint.imageHash); unknown = true; }
-            if (result) { gif = true; break; }
-          } catch (_) {
-            if (signatureCache.get(paint.imageHash) === pending) signatureCache.delete(paint.imageHash);
-            if (!live()) return;
-            failedCount++; unknown = true;
-          }
+            let known=imageResources.knownFormat(paint.imageHash);
+            if(!known){
+              if(reads>=8||performance.now()-started>=250){unknown=true;continue;}
+              if(!live())return;reads++;
+              known=await imageResources.identify(paint.imageHash);
+            }
+            if(!live())return;
+            if(known==='gif'){gif=true;break;}
+          }catch(_){if(!live())return;failedCount++;unknown=true;}
+
         }
         if (gif) gifCount++; else if (unknown) unknownCount++;
       }
@@ -230,10 +198,10 @@
     return live() ? { gifCount, failedCount, unknownCount } : { gifCount: 0, failedCount: 0, unknownCount: 0 };
   }
   function stopSelected() {
-    const ids = new Set(selectedNodes().map(node => node.id));
+    const ids = new Set(api.currentPage.selection.map(node => node.id));
     for (const id of ids) suppressed.add(id);
     for (let i = items.length - 1; i >= 0; i--) {
-      const item = items[i]; if (!ids.has(item.node.id)) continue;
+      const item = items[i]; if (!services.selectionContains(item.node,ids)) continue;
       item.image.removeAttribute('src'); URL.revokeObjectURL(item.url); item.clip.remove(); items.splice(i, 1);
     }
     state.gifs = items.length; state.visible = Math.min(state.visible, items.length); lastViewport = '';
@@ -246,24 +214,23 @@
     pageId = api.currentPage.id; state.pageId = pageId;
     state.loading = true; state.skipped = 0; state.errors = [];
     const token = ++serial, cache = new Map(); updateControls();
-    const nodes = selectedNodes().filter(node => Array.isArray(node.fills));
-    for (const node of nodes) suppressed.delete(node.id);
+    suppressed.clear();
     try {
+      const nodes=(await services.selectionNodes(api,{deep:true,current:()=>!disposed&&token===serial})).filter(node=>Array.isArray(node.fills));
       for (const node of nodes) for (let fillIndex = 0; fillIndex < node.fills.length; fillIndex++) {
         if (disposed || token !== serial) return;
         const paint = node.fills[fillIndex];
-        if (suppressed.has(node.id)) continue;
+        if (services.selectionContains(node,suppressed)) continue;
         if (paint.type !== 'IMAGE' || !paint.imageHash || paint.visible === false) continue;
         if (items.some(item => item.node.id === node.id && item.fillIndex === fillIndex && item.paint.imageHash === paint.imageHash)) continue;
         let bytes = cache.get(paint.imageHash);
         if (bytes === undefined) {
           const existing = null;
-          bytes = existing?.bytes ?? await api.getImageByHash(paint.imageHash).getBytesAsync();
+          bytes = existing?.bytes ?? await imageResources.bytes(paint.imageHash);
           if (disposed || token !== serial) return;
-          if (suppressed.has(node.id)) continue;
+          if (services.selectionContains(node,suppressed)) continue;
           const gif = isGif(bytes);
-          if (signatureCache.size >= 512) signatureCache.delete(signatureCache.keys().next().value);
-          signatureCache.set(paint.imageHash, Promise.resolve(gif));
+          imageResources.remember(paint.imageHash,bytes);
           bytes = gif ? bytes : null;
           cache.set(paint.imageHash, bytes);
         }
@@ -307,7 +274,7 @@
   function dispose() {
     if (disposed) return;
     serial++; stop(); disposed = true; state.loading = false;
-    clearItems(); root.remove(); controls.remove();
+    clearItems(); imageResources.dispose(); root.remove(); controls.remove();
     host.removeEventListener('pointerdown', pointerDown, true);
     window.removeEventListener('pointerup', pointerUp, true);
   }
@@ -315,4 +282,3 @@
   updateControls();
   console.log('FIGMA_CANVAS_GIF_READY: await FigmaCanvasGif.scan();');
 })();
-

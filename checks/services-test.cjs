@@ -1,0 +1,32 @@
+const assert=require('node:assert/strict'),S=require('../runtime/editor-services.js');
+const turn=()=>new Promise(r=>setImmediate(r));
+(async()=>{
+ const queue=S.latestTask();let finish,writes=0;
+ const old=queue.run('node',async token=>{await new Promise(r=>finish=r);token.commit(()=>writes++);});
+ const next=queue.run('node',token=>token.commit(()=>++writes));assert.equal((await old).status,'cancelled');finish();assert.equal((await next).value,1);assert.equal(writes,1,'stale jobs cannot write');
+ await turn();let resolve;const pending=queue.run('pending',async()=>new Promise(r=>resolve=r));queue.dispose();assert.equal((await pending).status,'cancelled');resolve();await turn();assert.equal(queue.busy,false);
+ const image={width:4,height:2,close(){closed++;}};let reads=0,decodes=0,closed=0,release;
+ const images=S.imageResources({read:async()=>{reads++;return new Uint8Array([71,73,70,56,57,97]);},decode:async()=>{decodes++;return image;}});
+ await Promise.all([images.identify('a'),images.identify('a')]);assert.equal(reads,1);assert.equal(images.knownFormat('a'),'gif');assert.equal(images.size.inFlight,0,'raw bytes are not retained');
+ const used=images.withBitmap('a',async()=>new Promise(r=>release=r));await turn();images.dispose();assert.equal(closed,0,'dispose does not close an in-use bitmap');release();await used;assert.equal(closed,1);assert.equal(decodes,1);
+ const missing=S.editorImages({getImageByHash:()=>null});await assert.rejects(missing.bytes('missing'),/Image unavailable/);missing.dispose();
+ const handlers=new Map();let invoked=0,committed=0;const api={currentPage:{id:'page',selection:[{id:'a'}]},on:(e,f)=>handlers.set(e,f),off:e=>handlers.delete(e)};
+ const watch=S.watchSelection(api,{delay:5,poll:0,run:({nodes},token)=>{invoked++;token.commit(()=>committed=nodes.length);}});
+ for(let i=0;i<20;i++){api.currentPage.selection=[{id:String(i)}];handlers.get('selectionchange')();}
+ await new Promise(r=>setTimeout(r,20));assert.equal(invoked,1);assert.equal(committed,1);watch.dispose();assert.equal(handlers.size,0);
+ const parent={id:'root',children:[{id:'hidden',visible:false,children:[{id:'child'}]},{id:'ok'}]};api.currentPage.selection=[parent,parent];assert.deepEqual((await S.selectionNodes(api,{deep:true})).map(x=>x.id),['root','ok']);
+ let metadata='before',undo=0;const node={id:'safe',width:10,height:20,fills:[{type:'IMAGE',imageHash:'old'}],getSharedPluginData:()=>metadata,setSharedPluginData:(_,__,value)=>{if(value==='fail')throw Error('write failed');metadata=value;}};
+ let snapshot=S.paintSnapshot(node,{key:'test'});node.fills=[{type:'IMAGE',imageHash:'external'}];assert.equal(S.writePaints(snapshot,{fills:[],data:'new'}),false,'external edits are never overwritten');
+ snapshot=S.paintSnapshot(node,{key:'test'});assert.throws(()=>S.writePaints(snapshot,{fills:[],data:'fail'}),/write failed/);assert.deepEqual(node.fills,snapshot.fills);assert.equal(metadata,'before','failed shared data write rolls back paints');
+ assert.equal(S.writePaints(snapshot,{fills:[{type:'SOLID'}],data:'after',commit:true,api:{commitUndo:()=>undo++}}),true);assert.equal(undo,1);
+ let changed=0;assert.throws(()=>S.undoGroup({},()=>changed++),/unavailable/);assert.equal(changed,0);assert.throws(()=>S.undoGroup({commitUndo(){}},async()=>changed++),/synchronous/);assert.equal(changed,0);S.undoGroup({commitUndo:()=>undo++},()=>changed++);assert.equal(changed,1);assert.equal(undo,2);
+ const events=new Map(),life=S.scope();life.listen({addEventListener:(e,f)=>events.set(e,f),removeEventListener:e=>events.delete(e)},'tick',()=>{});life.dispose();assert.equal(events.size,0);let immediateCleanup=false;life.add(()=>immediateCleanup=true);assert.equal(immediateCleanup,true);
+ let attempt=0;const retry=S.imageResources({read:async()=>{if(++attempt===1)throw Error('temporary');return new Uint8Array([137,80,78,71]);},maxSignatures:1});await assert.rejects(retry.identify('a'),/temporary/);assert.equal(await retry.identify('a'),'png');await retry.identify('b');assert.equal(retry.size.signatures,1);assert.equal(retry.knownFormat('a'),undefined);retry.dispose();assert.throws(()=>S.imageResources({maxSignatures:-1}),/limits/);
+ const operations=[];let cancelled=false;const files=S.exportFiles('fixture',{native:async(id,op,payload)=>{assert.equal(id,'fixture');operations.push(payload?.action||op);return payload?.action==='prepare'?{batchId:'batch',names:['a.png','b.png']}:{};}});
+ const partial=await files.run([{name:'a.png',width:1,height:1},{name:'b.png',width:1,height:1}],{directory:'test',encode:async()=>{cancelled=true;return 'png';},cancelled:()=>cancelled});assert.equal(partial.completed,0);assert.equal(partial.cancelled,true);assert.deepEqual(operations,['prepare','cancel']);
+ operations.length=0;await assert.rejects(files.run([{name:'a.png',width:1,height:1}],{directory:'test',encode:async()=>{throw Error('encoder failed');}}),error=>error.completed===0&&error.message==='encoder failed');assert.deepEqual(operations,['prepare','cancel'],'failed encodes close their native batch');
+ const progress=S.progressTask();let releaseWork;const job=progress.run([1,2],async()=>new Promise(r=>releaseWork=r));progress.cancel();assert.equal((await job).status,'cancelled');releaseWork();progress.dispose();await turn();
+ assert.equal(await S.resolveNode({getNodeByIdAsync:async id=>id==='a'?{id}:null},'missing'),null);assert.equal((await S.resolveNode({getNodeById:id=>({id})},'a')).id,'a');await assert.rejects(S.resolveNode({},'a'),/unavailable/);
+ const fonts=[];const loaded=await S.loadFonts({loadFontAsync:async font=>fonts.push(font)},[{family:'Inter',style:'Regular'},{family:'Inter',style:'Regular'}]);assert.equal(loaded.loaded,1);assert.equal(fonts.length,1);assert.equal((await S.loadFonts({loadFontAsync:async()=>assert.fail()},[{family:'Inter',style:'Regular'}],{current:()=>false})).cancelled,true);await assert.rejects(S.loadFonts({},[]),/unavailable/);
+ console.log('PASS services: superseded writes, queued tasks, disposal, image deduplication/leases, selection debounce/traversal/cleanup');
+})().catch(e=>{console.error(e);process.exit(1);});

@@ -7,7 +7,7 @@ public static class ExtensionCatalog {
  public static string Home=>TestHome??Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"FigmaGifAssistant");
  public static string CustomDirectory=>Path.Combine(Home,"extensions");
  static readonly JsonSerializerOptions Json=new(){PropertyNameCaseInsensitive=true,WriteIndented=true};
- public sealed record Manifest(int SchemaVersion,string Id,string Name,string Version,string Description,string Permission,string[] Scripts,string[] Commands,string[]? NativeCapabilities=null);
+ public sealed record Manifest(int SchemaVersion,string Id,string Name,string Version,string Description,string Permission,string[] Scripts,string[] Commands,string[]? NativeCapabilities=null,string? MinimumSdk=null);
  public sealed record Extension(Manifest Info,string Folder,bool BuiltIn,bool Enabled,string? Error) {
   public string State=>Error??(Enabled?"已选择启用":"已选择停用");
   public string PermissionLabel=>(Info.Permission=="write-design"?"修改设计内容":"只读设计")+(Info.NativeCapabilities?.Contains("export-png")==true?" · 导出本地图片":"");
@@ -20,6 +20,7 @@ public static class ExtensionCatalog {
     try{
      var m=JsonSerializer.Deserialize<Manifest>(File.ReadAllText(Path.Combine(folder,"module.json")),Json)??throw new IOException("扩展清单为空");
      if(m.SchemaVersion!=1||(m.Id is null||!Regex.IsMatch(m.Id,"^[a-z][a-z0-9-]{0,47}$"))||string.IsNullOrWhiteSpace(m.Name)||m.Scripts is null||m.Scripts.Length==0||m.Commands is null||m.Commands.Any(c=>!Regex.IsMatch(c,"^[a-zA-Z][a-zA-Z0-9]{0,47}$"))||m.Commands.Distinct().Count()!=m.Commands.Length||m.Permission is not ("read-design" or "write-design"))throw new IOException("扩展清单格式不受支持");
+     if(m.MinimumSdk is not null&&(!Version.TryParse(m.MinimumSdk,out var required)||required>new Version(2,1,0)))throw new IOException("扩展需要更高版本 SDK："+m.MinimumSdk);
      if(!ids.Add(m.Id))throw new IOException("扩展 ID 重复");
      if(m.NativeCapabilities?.Any(x=>x is not ("export-png" or "open-export-folder" or "choose-export-folder"))==true)throw new IOException("扩展声明了不受支持的本地能力");
      bool builtin=false;var extension=new Extension(m,folder,builtin,selection.GetValueOrDefault(m.Id,File.Exists(Path.Combine(folder,".bundled-seed"))),null);
@@ -55,6 +56,8 @@ public static class ExtensionCatalog {
   var builder=new System.Text.StringBuilder(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","framework.js")));
   builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","component-reference.js")));
   builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","native-ui.js")));
+  builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","services.js")));
+  builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","editor-services.js")));
   builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","sdk.js")));
   builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","component-kit.js")));
   foreach(var module in enabled){
@@ -67,4 +70,3 @@ public static class ExtensionCatalog {
  public static string CommandMap()=>JsonSerializer.Serialize(List().Where(x=>x.Enabled&&x.Error is null).ToDictionary(x=>x.Info.Id,x=>x.Info.Commands));
  public static string NativeMap()=>JsonSerializer.Serialize(List().Where(x=>x.Enabled&&x.Error is null&&x.Info.NativeCapabilities?.Length>0).ToDictionary(x=>x.Info.Id,x=>x.Info.NativeCapabilities));
 }
-

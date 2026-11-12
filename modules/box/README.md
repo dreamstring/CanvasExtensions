@@ -4,7 +4,7 @@
 
 ## 概览
 
-版本 **0.1.6** · 模块 ID box · 权限 write-design。普通目录扩展，和 GIF、纹理导出及第三方模块使用相同清单与 SDK。2026-11-08 用户确认 Figma 126.11.8 中已实现并通过验收。
+版本 **0.1.7** · 模块 ID box · 权限 write-design。普通目录扩展，和 GIF、纹理导出及第三方模块使用相同清单与 SDK。原 Box 0.1.6 行为于 2026-11-08 经用户在 Figma 126.11.8 验收；0.1.7 是本次 SDK 迁移版本，已通过自动回归，尚未重新实机验收。
 
 ## 使用
 
@@ -26,6 +26,8 @@
 
 最大输出边长 8192，面积 16,777,216 像素。当前要求单选图片填充对象；同一对象含 Pattern 填充时会拒绝写入。调整尺寸采用轮询及合并重绘，不能保证原生 GPU 帧率。原图滤镜、透明度和混合模式沿用，原有 Fill/Fit/Crop/Tile 映射在 Box 生效时由九宫格替代。
 
+需要宿主 SDK 2.1（主程序 0.7.0 起）。模块采用公共任务、图片与生命周期能力；旧主程序无法加载这些新增调用，升级时先更新主程序并重新应用。
+
 ## 开发
 
 - rules.js：纯九宫格几何、百分比换算和像素对齐。
@@ -43,4 +45,4 @@
 
 ## English
 
-A normal SDK directory module for nine-slice image fills. Percentages describe border thickness, not UV end coordinates. Source pixels remain cached and referenced by an invisible native image paint for restoration. Resize requests coalesce; stale encodes cannot overwrite edits or restores. The generated PNG survives disabling the module, but live resize redraw requires the extension. Shared integer destination boundaries fix GPU-antialiasing seams while retaining fractional source coordinates. Box 0.1.6 was accepted by the user on Figma 126.11.8.
+A normal SDK directory module for nine-slice image fills. Percentages describe border thickness, not UV end coordinates. Source pixels remain cached and referenced by an invisible native image paint for restoration. Resize requests coalesce; stale encodes cannot overwrite edits or restores. The generated PNG survives disabling the module, but live resize redraw requires the extension. Shared integer destination boundaries fix GPU-antialiasing seams while retaining fractional source coordinates. The earlier Box 0.1.6 behavior was accepted on Figma 126.11.8. The 0.1.7 SDK migration has automated regression coverage, not renewed live Figma acceptance.

@@ -10,7 +10,7 @@ const turn=()=>new Promise(resolve=>setImmediate(resolve));
  assert.equal(writes,1);assert.equal(JSON.parse(metadata).margins.left,20);assert.equal(decodes,1,'same original bitmap is decoded once');
  let saved=JSON.parse(metadata);const resizing=renderer.request(node,saved);await turn();node.width=101;encode();assert.equal(await resizing,false);assert.equal(writes,1,'obsolete dimensions never replace the image');
  const undone=renderer.request(node,saved);await turn();metadata='';encode();assert.equal(await undone,false);assert.equal(writes,1,'undo during encoding cannot be overwritten');
- const disposed=renderer.request(node,{...settings,paint:{type:'IMAGE',imageHash:'output1'}});await turn();renderer.dispose();encode();assert.equal(await disposed,false);assert.equal(writes,1);assert.equal(closed,2,'all cached source bitmaps are closed');
+ const disposed=renderer.request(node,{...settings,paint:{type:'IMAGE',imageHash:'output1'}});await turn();renderer.dispose();encode();assert.equal(await disposed,false);assert.equal(writes,1);await turn();assert.equal(closed,2,'all cached source bitmaps are closed after in-flight encoder releases its lease');
  const beforeMetadata=metadata,beforeFills=JSON.stringify(node.fills);
  const missing=create({rules,api:{getImageByHash:()=>null},document:{},decode:()=>assert.fail('missing sources must not reach decode')});
  await assert.rejects(missing.request(node,settings),/原图资源不可用/);

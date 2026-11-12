@@ -7,8 +7,13 @@
   return {value,save(){localStorage.setItem(key,JSON.stringify(value));},set(name,next){value[name]=next;this.save();}};
  }
  function scope(api=window.figma){
-  const cleanups=[];let disposed=false;
-  return {add(fn){if(disposed)fn();else cleanups.push(fn);return fn;},on(event,fn){api.on?.(event,fn);this.add(()=>api.off?.(event,fn));},interval(fn,ms){const timer=setInterval(fn,ms);this.add(()=>clearInterval(timer));return timer;},dispose(){if(disposed)return;disposed=true;for(const fn of cleanups.reverse())try{fn();}catch(_){}},get disposed(){return disposed;}};
+  const life=window.CanvasExtensionServices.scope();
+  return Object.assign(life,{
+   on(event,fn){api.on?.(event,fn);this.add(()=>api.off?.(event,fn));},
+   interval(fn,ms){const timer=setInterval(()=>{if(!life.disposed)fn();},ms);this.add(()=>clearInterval(timer));return timer;},
+   timeout(fn,ms){const timer=setTimeout(()=>{if(!life.disposed)fn();},ms);this.add(()=>clearTimeout(timer));return timer;},
+   url(blob){const url=URL.createObjectURL(blob);this.add(()=>URL.revokeObjectURL(url));return url;}
+  });
  }
  function panel(id,options){return host.createSection(id,options.title,options);}
  function define(spec){
@@ -38,6 +43,9 @@
     'selection.read':{available:!!selection,evidence:'runtime-shape'},
     'events.selection':{available:typeof api?.on==='function'&&typeof api?.off==='function',evidence:'runtime-shape'},
     'viewport.read':{available:!!api?.viewport?.bounds&&Number.isFinite(api?.viewport?.zoom),evidence:'runtime-shape'},
+    'images.decode':{available:typeof window.createImageBitmap==='function',evidence:'runtime-shape'},
+    'fills.write':{available:nodes.length?nodes.every(n=>Array.isArray(n.fills)):null,evidence:'runtime-shape-only'},
+    'pluginData.shared':{available:nodes.length?nodes.every(n=>typeof n.getSharedPluginData==='function'&&typeof n.setSharedPluginData==='function'):null,evidence:'runtime-shape-only'},
     'images.read':{available:typeof api?.getImageByHash==='function',evidence:'runtime-shape'},
     'nodes.export.png':{available:nodes.length?nodes.every(n=>typeof n.exportAsync==='function'):null,evidence:nodes.length?'runtime-shape':'needs-selection'},
     'fonts.load':{available:typeof api?.loadFontAsync==='function',evidence:'runtime-shape-only'},
@@ -51,5 +59,5 @@
   async exportPng(node){if(typeof node?.exportAsync!=='function')throw Error('对象不支持 PNG 导出');return await node.exportAsync({format:'PNG',constraint:{type:'SCALE',value:1}});},
   local(id){return Object.freeze({chooseFolder:directory=>host.nativeRequest(id,'choose-export-folder',{directory}),openFolder:directory=>host.nativeRequest(id,'open-export-folder',{directory})});}
  };
- host.sdk=Object.freeze({version:'2.0',compose:spec=>host.componentKit.compose(spec),ui:host.ui,settings,scope,panel,define,capabilities:Object.freeze(capabilities)});
+ host.sdk=Object.freeze({version:'2.1',services:window.CanvasExtensionServices,components:Object.freeze({directoryField:(...args)=>host.componentKit.directoryField(...args),preview:(...args)=>host.componentKit.preview(...args),stylePreview:(...args)=>host.componentKit.stylePreview(...args)}),compose:spec=>host.componentKit.compose(spec),ui:host.ui,settings,scope,panel,define,capabilities:Object.freeze(capabilities)});
 })();

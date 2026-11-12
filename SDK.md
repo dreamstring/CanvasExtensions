@@ -1,20 +1,26 @@
-# SDK 2.0 更新
+# Canvas Extensions SDK
+
+## SDK 2.1 公共服务
+
+任务、图片、受控写回、文件批次、路径与预览控件见 [SDK-SERVICES.md](SDK-SERVICES.md)。示例位于 templates/services-example。旧面板接口保持兼容。
+
+## SDK 2.0 组合组件
 
 新的嵌套组合声明、原生样式证据与限制见 [SDK-COMPONENTS.md](SDK-COMPONENTS.md)。以下保留旧版接口说明以兼容已有扩展。
 
-# Canvas Extensions SDK 1.0
+## 基础接口（兼容 SDK 1.0）
 
 主程序 0.4.0 提供宿主与 SDK。GIF 和纹理导出均为普通目录扩展，没有 ID 专用加载分支。
 
 ## 文件布局
 
 `%LOCALAPPDATA%/FigmaGifAssistant/extensions/<id>/module.json` 和功能脚本。
-首次启动从发布包复制两个示例；已存在的目录不会被覆盖。扩展修改后重新扫描，再退出 Figma、应用扩展并重新启动。运行中的 Figma 不会热更新。
+首次启动从发布包复制三个普通模块示例；已存在的目录不会被覆盖。扩展修改后重新扫描，再退出 Figma、应用扩展并重新启动。运行中的 Figma 不会热更新。
 更新扩展可直接替换对应目录文件，保留相同 ID；主程序版本无需改变。发布包中的模块是首次安装种子，不是更高优先级的隐藏副本。修改前建议复制目录备份；不要同时保留相同 ID 的两个目录。
 
 ## 最小示例
 
-复制 `templates/sdk-example` 到扩展目录，重新扫描后启用。清单包含 schemaVersion、id、name、version、description、permission、scripts、commands、可选 nativeCapabilities。版本属于扩展自身。
+复制 `templates/sdk-example` 到扩展目录，重新扫描后启用。清单包含 schemaVersion、id、name、version、description、permission、scripts、commands、可选 minimumSdk（公共服务要求 2.1）、nativeCapabilities。版本属于扩展自身。
 
 ```js
 window.FigmaExtensions.sdk.define({
