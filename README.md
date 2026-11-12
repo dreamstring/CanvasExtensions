@@ -14,9 +14,9 @@ Canvas Extensions 是一个通用的 Figma 桌面端扩展注入器。主程序�
 
 | 预装扩展 | 独立版本 | 功能 |
 | --- | --- | --- |
-| GIF 画布预览 | 0.2.10 | 在画布上预览 GIF，累加播放、停止所选，切换选择保留其他播放 |
-| 纹理批量导出 | 0.2.6 | PNG 批量导出，16 倍数／二次幂尺寸、取整规则、命名前缀、手动尺寸和输出目录 |
-| Box 九宫格填充 | 0.1.6 | 图片填充中设置百分比／像素边距，保留边角并随对象尺寸重绘，支持恢复原图 |
+| [GIF 画布预览](modules/gif/README.md) | 0.2.10 | 在画布上预览 GIF，累加播放、停止所选，切换选择保留其他播放 |
+| [纹理批量导出](modules/texture-export/README.md) | 0.2.6 | PNG 批量导出，16 倍数／二次幂尺寸、取整规则、命名前缀、手动尺寸和输出目录 |
+| [Box 九宫格填充](modules/box/README.md) | 0.1.6 | 图片填充中设置百分比／像素边距，保留边角并随对象尺寸重绘，支持恢复原图 |
 
 当前发行包：**0.6.6-r2**。`r2` 表示同一主程序版本的第二次打包修订；主程序和各扩展仍独立编号。
 
@@ -31,11 +31,13 @@ Canvas Extensions 是一个通用的 Figma 桌面端扩展注入器。主程序�
 
 原始资源、安装记录与扩展存放在 `%LOCALAPPDATA%\FigmaGifAssistant`。保留此历史目录名以兼容现有用户。程序修改 `resources/app.asar` 的加载入口，保留原始备份，不修改 Figma.exe。未知版本通过结构检查也不代表运行兼容；详情见 [多版本说明](MULTI-VERSION.md)。
 
-### Box 九宫格填充
+### 扩展使用说明
 
-在图片 Fill 弹窗中点击九宫格图标，输入 Left / Top / Right / Bottom。默认百分比：`10` 代表原图尺寸的 10%，四项均为边框厚度。输入时更新面板预览，Enter 或移开焦点后应用；拖动对象尺寸会合并重绘。两侧合计 100% 时，中间取接缝像素拉伸。输出边界对齐像素，避免 GPU 抗锯齿暗缝。
+- **[GIF 画布预览](modules/gif/README.md)**：Preview 累加播放，Stop 停止所选；直接图片自动识别，容器按需识别。
+- **[纹理批量导出](modules/texture-export/README.md)**：设置尺寸、命名与目录，预览后批量输出 PNG。
+- **[Box 九宫格填充](modules/box/README.md)**：在图片 Fill 弹窗设置四边厚度，保留边角，尺寸变化重绘，支持恢复原图。
 
-Box 会保留一项隐藏原图填充，供保存后重绘及恢复使用。它生成普通 PNG 填充，不是原生 Shader；停用扩展后最后结果仍可显示，但不会继续自动重绘。旧对象原图失效时，可以明确选择“以当前图片重建 Box”。详见 [Box 说明](modules/box/README.md)。
+每个模块文档统一包含：概览、使用、参数与行为、数据与权限、限制、开发、验证及英文摘要。
 
 ### 开发扩展
 
@@ -101,12 +103,9 @@ Download the standalone Windows x64 EXE from Releases. Select your Figma install
 
 Build on Windows with .NET 9 and Node.js 22 using the commands above. Tests use synthetic inputs, mocked editor surfaces and real Skia raster pixels. `npm run test:box-gpu` optionally checks fractional-margin seams in an isolated headless Chromium profile. Start an extension from `templates/sdk-example`; see [SDK.md](SDK.md) and [SDK-COMPONENTS.md](SDK-COMPONENTS.md). Runtime compatibility depends on Figma's internal APIs; structural compatibility alone is not a guarantee.
 
+Module guides: [GIF](modules/gif/README.md) · [Texture export](modules/texture-export/README.md) · [Box](modules/box/README.md). Each follows the same documentation structure. Bundle revisions such as 0.6.6-r2 do not change host/module versions.
+
 ## License
 
 Copyright © 2026 Dring Qian (dreamstring). Project code: **GPL-3.0-only**, see [LICENSE](LICENSE). Distributed derivatives must provide corresponding source under GPL. Private modifications do not require public release. Font and icon licenses are retained in `references/`; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-GIF 识别在选区稳定 250ms 后启动，仅自动读取直接选中的图片，不遍历容器子层；容器内图片点击 Preview 再识别。每次最多读取 8 张未缓存图片、串行读取，250ms 后不再启动新读取。识别不会启动动画；签名缓存复用。单张完整图片读取仍可能有短暂开销。
-
-GIF recognition starts after the selection settles for 250ms. Only directly selected images are read automatically; container descendants are scanned on Preview. Each inspection reads at most 8 uncached images serially and starts no new reads after 250ms. Signatures are cached and detection never starts animation. Reading one complete image can still incur a temporary cost.
-
-Bundle revisions use `rN` (for example, `0.6.6-r2`); they do not change the host or module versions. The manager screenshot is rendered from the real WPF controls using RenderTargetBitmap, with isolated module settings.
