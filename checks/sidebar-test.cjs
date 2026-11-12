@@ -19,7 +19,7 @@ function setup(anchorPresent=true){
  effectsLabel.textContent='Effects';exportButton.textContent=anchorPresent?'Export':'Unknown';body.append(side);side.append(stack);stack.append(effects,section);effects.append(effectsLabel);section.append(header);header.append(exportButton);
  let stops=0,scans=0,disposes=0,disconnects=0;const handlers=new Map(),timers=new Map();
  const engine={hasImageSelection:()=>true,gifCount:1,status:{loading:false,running:false,gifs:0,visible:0,skipped:0,errors:[]},async inspectSelection(){return{gifCount:this.gifCount};},selectedPlayingCount(){return this.status.running?1:0;},isLive:()=>true,async scan(){scans++;this.status.running=true;},stopSelected(){stops++;this.status.running=false;},reset(){stops++;this.status.running=false;},dispose(){disposes++;}};
- const context={document:{body,createElement:tag=>new Element(tag),querySelector:()=>side},MutationObserver:class{observe(){}disconnect(){disconnects++;}},queueMicrotask,setInterval:fn=>{timers.set(1,fn);return 1;},clearInterval:id=>timers.delete(id),figma:{currentPage:{id:'page',selection:[{id:'a'}]},on:(event,fn)=>handlers.set(event,fn),off:event=>handlers.delete(event)},FigmaCanvasGif:engine};context.window=context;vm.runInNewContext(source,context);
+ const context={setTimeout:fn=>{queueMicrotask(fn);return 1;},clearTimeout(){},document:{body,createElement:tag=>new Element(tag),querySelector:()=>side},MutationObserver:class{observe(){}disconnect(){disconnects++;}},queueMicrotask,setInterval:fn=>{timers.set(1,fn);return 1;},clearInterval:id=>timers.delete(id),figma:{currentPage:{id:'page',selection:[{id:'a'}]},on:(event,fn)=>handlers.set(event,fn),off:event=>handlers.delete(event)},FigmaCanvasGif:engine};context.window=context;vm.runInNewContext(source,context);
  return{context,engine,handlers,timers,section,header,stack,Element,getCounts:()=>({stops,scans,disposes,disconnects})};
 }
 (async()=>{
@@ -33,12 +33,12 @@ function setup(anchorPresent=true){
  a.engine.gifCount=0;a.handlers.get('selectionchange')();await flush();assert.equal(a.context.FigmaAssistant.status().sidebarMounted,false,'empty/non-GIF selection hides module');assert.equal(a.engine.status.running,true,'hidden module does not stop other GIFs');
  a.engine.gifCount=1;a.handlers.get('selectionchange')();await flush();assert.equal(a.context.FigmaAssistant.status().sidebarMounted,true);
  await a.context.FigmaAssistant.command('gif','stop');assert.equal(a.getCounts().stops,1,'Stop dispatches selected-only action');
- let oldResolve;a.engine.inspectSelection=()=>new Promise(resolve=>oldResolve=resolve);a.handlers.get('selectionchange')();a.engine.inspectSelection=async()=>({gifCount:0});a.handlers.get('selectionchange')();await flush();oldResolve({gifCount:1});await flush();assert.equal(a.context.FigmaAssistant.status().sidebarMounted,false,'late detection cannot resurrect stale selection');
+ let oldResolve;a.engine.inspectSelection=()=>new Promise(resolve=>oldResolve=resolve);a.handlers.get('selectionchange')();await flush();a.engine.inspectSelection=async()=>({gifCount:0});a.handlers.get('selectionchange')();await flush();oldResolve({gifCount:1});await flush();assert.equal(a.context.FigmaAssistant.status().sidebarMounted,false,'late detection cannot resurrect stale selection');
  await a.context.FigmaAssistant.command('gif','previewSelection');a.handlers.get('currentpagechange')();assert.equal(a.engine.status.running,false,'page switch resets playback');
  await assert.rejects(()=>a.context.FigmaAssistant.command('gif','toString'),/Unsupported/);a.context.FigmaAssistant.dispose();assert.equal(a.handlers.size,0);assert.equal(a.timers.size,0);assert.equal(a.getCounts().disposes,1);assert.equal(a.getCounts().disconnects,1);
  const b=setup(false);await flush();assert.equal(b.context.FigmaAssistant.status().sidebarMounted,false,'unknown Export anchor fails closed');b.context.FigmaAssistant.dispose();
  const c=setup();await flush();let finishSlow;
- c.engine.inspectSelection=()=>new Promise(resolve=>finishSlow=resolve);c.handlers.get('selectionchange')();
+ c.engine.inspectSelection=()=>new Promise(resolve=>finishSlow=resolve);c.handlers.get('selectionchange')();await flush();
  assert.equal(c.context.FigmaAssistant.status().sidebarMounted,true,'panel is mounted before slow image bytes resolve');assert.equal(c.context.FigmaAssistant.status().inspecting,true);
  const slowPanel=c.stack.children[2],slowBody=slowPanel.shadowRoot.children[1];assert.equal(slowBody.children[0].children[0].disabled,true,'Preview disabled during recognition');assert.match(slowBody.children[1].children[3].textContent,/正在识别/);
  finishSlow({gifCount:2});await flush();assert.equal(c.context.FigmaAssistant.status().inspecting,false);assert.equal(slowBody.children[0].children[0].disabled,false);
@@ -46,5 +46,8 @@ function setup(anchorPresent=true){
  const deferred=setup();await flush();deferred.engine.inspectSelection=async()=>({gifCount:0,unknownCount:12,failedCount:0});deferred.handlers.get('selectionchange')();await flush();
  assert.equal(deferred.context.FigmaAssistant.status().sidebarMounted,true,'deferred images keep Preview accessible');
  const deferredBody=deferred.stack.children[2].shadowRoot.children[1];assert.equal(deferredBody.children[0].children[0].disabled,false);assert.match(deferredBody.children[1].children[3].textContent,/Preview/);deferred.context.FigmaAssistant.dispose();
+ const burst=setup();await flush();let inspections=0;burst.engine.inspectSelection=async()=>{inspections++;return{gifCount:1};};
+ for(let i=0;i<20;i++){burst.context.figma.currentPage.selection=[{id:'burst'+i}];burst.handlers.get('selectionchange')();}
+ assert.equal(inspections,0,'selection events do not immediately read images');await flush();assert.equal(inspections,1,'only final stable selection is inspected');burst.context.FigmaAssistant.dispose();
  console.log('PASS sidebar: whole Export boundary, expansion, GIF selection gating, persistence, selected Stop, async race, cleanup');
 })();

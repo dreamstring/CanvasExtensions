@@ -1,1 +1,1 @@
-{"schemaVersion": 1, "id": "gif", "name": "GIF 画布预览", "version": "0.2.9", "description": "在画布中播放 GIF，支持累加播放与停止所选。", "permission": "read-design", "scripts": ["engine.js", "sidebar.js", "main.js"], "commands": ["previewSelection", "stop"]}
+{"schemaVersion": 1, "id": "gif", "name": "GIF 画布预览", "version": "0.2.10", "description": "在画布中播放 GIF，支持累加播放与停止所选。", "permission": "read-design", "scripts": ["engine.js", "sidebar.js", "main.js"], "commands": ["previewSelection", "stop"]}

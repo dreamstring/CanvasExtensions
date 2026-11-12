@@ -79,7 +79,7 @@ function setup() {
   await g.context.FigmaCanvasGif.inspectSelection();assert.equal(reads,3,'signature checks are cached');
   g.context.figma.currentPage.selection=[g.nodes[1]];assert.equal((await g.context.FigmaCanvasGif.inspectSelection()).gifCount,0,'PNG hides controls');
   g.context.figma.currentPage.selection=[];assert.equal((await g.context.FigmaCanvasGif.inspectSelection()).gifCount,0,'empty selection hides controls');
-  g.context.figma.currentPage.selection=[{id:'group',children:[g.nodes[0],g.nodes[2]]}];assert.equal((await g.context.FigmaCanvasGif.inspectSelection()).gifCount,2,'group descendants are inspected');
+  g.context.figma.currentPage.selection=[{id:'group',children:[g.nodes[0],g.nodes[2]]}];assert.equal((await g.context.FigmaCanvasGif.inspectSelection()).unknownCount,1,'containers defer descendant reads to Preview');
   assert.equal(g.context.FigmaCanvasGif.status.gifs,0,'inspection never starts playback');g.context.FigmaCanvasGif.dispose();
   const h=setup();h.context.figma.currentPage.selection=[{...h.nodes[0],fills:[h.nodes[0].fills[0],h.nodes[2].fills[0]]}];
   assert.equal((await h.context.FigmaCanvasGif.inspectSelection()).gifCount,1,'multiple GIF fills count as one GIF object');
@@ -87,9 +87,9 @@ function setup() {
   const parallel=setup();parallel.context.figma.currentPage.selection=Array.from({length:8},(_,i)=>({...parallel.nodes[0],id:'p'+i,fills:[{...parallel.nodes[0].fills[0],imageHash:'parallel'+i}]}));
   let active=0,maxActive=0,readsStarted=0;const releases=[];
   parallel.context.figma.getImageByHash=()=>({getBytesAsync:()=>{active++;readsStarted++;maxActive=Math.max(maxActive,active);return new Promise(resolve=>releases.push(()=>{active--;resolve(Uint8Array.from([71,73,70,56,57,97]));}));}});
-  const recognizing=parallel.context.FigmaCanvasGif.inspectSelection();await new Promise(r=>setImmediate(r));assert.equal(readsStarted,2,'recognition reads begin concurrently');
+  const recognizing=parallel.context.FigmaCanvasGif.inspectSelection();await new Promise(r=>setImmediate(r));assert.equal(readsStarted,1,'recognition reads begin concurrently');
   for(let i=0;i<8;i++){await new Promise(r=>setImmediate(r));releases.shift()();}
-  assert.equal((await recognizing).gifCount,8);assert.equal(maxActive,2,'recognition concurrency is bounded');assert.equal(parallel.context.FigmaCanvasGif.status.gifs,0,'parallel recognition does not mount decoders');parallel.context.FigmaCanvasGif.dispose();
+  assert.equal((await recognizing).gifCount,8);assert.equal(maxActive,1,'recognition concurrency is bounded');assert.equal(parallel.context.FigmaCanvasGif.status.gifs,0,'parallel recognition does not mount decoders');parallel.context.FigmaCanvasGif.dispose();
   const bounded=setup(); let idleReads=0;
   bounded.context.figma.currentPage.selection=Array.from({length:100},(_,i)=>({...bounded.nodes[0],id:'many'+i,fills:[{...bounded.nodes[0].fills[0],imageHash:'many'+i}]}));
   bounded.context.figma.getImageByHash=()=>({getBytesAsync:async()=>{idleReads++;return Uint8Array.from([71,73,70,56,57,97]);}});
@@ -103,6 +103,7 @@ function setup() {
   const cancelled=setup();let cancelledReads=0;
   cancelled.context.figma.currentPage.selection=Array.from({length:200},(_,i)=>({...cancelled.nodes[0],id:'cancel'+i}));
   cancelled.context.figma.getImageByHash=()=>{cancelledReads++;throw Error('must not read');};
+  cancelled.context.figma.currentPage.selection=[{id:'container',children:cancelled.context.figma.currentPage.selection}];
   const walking=cancelled.context.FigmaCanvasGif.inspectSelection();cancelled.context.FigmaCanvasGif.cancelInspection();
   await walking;assert.equal(cancelledReads,0,'cancellation during chunked traversal prevents reads');cancelled.context.FigmaCanvasGif.dispose();
   const hidden=setup();hidden.context.figma.currentPage.selection=[{id:'hidden',visible:false,children:hidden.nodes}];
@@ -110,7 +111,7 @@ function setup() {
   const timed=setup();let clock=0,timedReads=0;timed.context.performance.now=()=>clock;
   timed.context.figma.currentPage.selection=Array.from({length:10},(_,i)=>({...timed.nodes[0],id:'t'+i,fills:[{...timed.nodes[0].fills[0],imageHash:'t'+i}]}));
   timed.context.figma.getImageByHash=()=>({getBytesAsync:async()=>{timedReads++;clock=300;return Uint8Array.from([71,73,70,56,57,97]);}});
-  const timedResult=await timed.context.FigmaCanvasGif.inspectSelection();assert.equal(timedReads,2,'elapsed budget stops new reads after in-flight pair');assert.equal(timedResult.unknownCount,8);timed.context.FigmaCanvasGif.dispose();
+  const timedResult=await timed.context.FigmaCanvasGif.inspectSelection();assert.equal(timedReads,1,'elapsed budget stops new reads after in-flight pair');assert.equal(timedResult.unknownCount,9);timed.context.FigmaCanvasGif.dispose();
   console.log('PASS: bounded parallel recognition, signature selection/cache, additive playback, selected Stop, viewport mapping, cleanup, unchanged design nodes');
 })();
 

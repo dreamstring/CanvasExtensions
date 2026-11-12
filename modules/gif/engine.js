@@ -182,18 +182,16 @@
   async function inspectSelection() {
     const token = ++inspectionSerial, inspectedPage = api.currentPage.id;
     const live = () => !disposed && token === inspectionSerial && inspectedPage === api.currentPage.id;
-    const nodes = [], seen = new Set(), stack = [...api.currentPage.selection].reverse();
-    let visited = 0;
-    // Large cached selections also yield, allowing selection changes to cancel traversal.
-    while (stack.length && live()) {
-      const node = stack.pop();
+    // Never traverse a container automatically. Preview owns the full descendant scan.
+    const nodes = [], seen = new Set();
+    let deferredContainers = 0;
+    for (const node of api.currentPage.selection) {
       if (seen.has(node.id) || node.removed || node.visible === false) continue;
       seen.add(node.id);
       if (Array.isArray(node.fills) && node.fills.some(isImagePaint)) nodes.push(node);
-      for (let i = (node.children?.length || 0) - 1; i >= 0; i--) stack.push(node.children[i]);
-      if (++visited % 64 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+      if (node.children?.length) deferredContainers++;
     }
-    let next = 0, gifCount = 0, failedCount = 0, unknownCount = 0, reads = 0;
+    let next = 0, gifCount = 0, failedCount = 0, unknownCount = deferredContainers, reads = 0;
     const started = performance.now();
     async function worker() {
       while (live() && next < nodes.length) {
@@ -228,7 +226,7 @@
         if (gif) gifCount++; else if (unknown) unknownCount++;
       }
     }
-    await Promise.all(Array.from({ length: Math.min(2, nodes.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(1, nodes.length) }, worker));
     return live() ? { gifCount, failedCount, unknownCount } : { gifCount: 0, failedCount: 0, unknownCount: 0 };
   }
   function stopSelected() {
