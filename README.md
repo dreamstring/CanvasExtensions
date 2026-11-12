@@ -31,6 +31,8 @@ Canvas Extensions 是一个通用的 Figma 桌面端扩展注入器。主程序�
 
 原始资源、安装记录与扩展存放在 `%LOCALAPPDATA%\FigmaGifAssistant`。保留此历史目录名以兼容现有用户。程序修改 `resources/app.asar` 的加载入口，保留原始备份，不修改 Figma.exe。未知版本通过结构检查也不代表运行兼容；详情见 [多版本说明](MULTI-VERSION.md)。
 
+“安装与诊断”的“使用填写的路径”旁提供“卸载 Figma…”：需先保存并退出客户端，确认后启动该安装目录的官方卸载程序，卸载整个客户端而非仅清理单个 app-* 版本。找不到卸载程序时打开 Windows 应用管理。扩展与备份会保留。此管理器功能从 0.6.7 起提供；当前已发布发行包见上文。
+
 ### 扩展使用说明
 
 - **[GIF 画布预览](modules/gif/README.md)**：Preview 累加播放，Stop 停止所选；直接图片自动识别，容器按需识别。

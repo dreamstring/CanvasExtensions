@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net9.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
-    <ApplicationIcon>Assets/app.ico</ApplicationIcon><Version>0.6.6</Version>
+    <ApplicationIcon>Assets/app.ico</ApplicationIcon><Version>0.6.7</Version>
     <Authors>Dring Qian (dreamstring)</Authors><Product>Canvas Extensions</Product><PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup><Resource Include="Assets/app.ico"/></ItemGroup>

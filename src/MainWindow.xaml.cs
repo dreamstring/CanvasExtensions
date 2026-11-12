@@ -55,6 +55,19 @@ public partial class MainWindow : Window {
    Process.Start(new ProcessStartInfo(executable){UseShellExecute=true,WorkingDirectory=Path.GetDirectoryName(executable)!});Feedback.Text="已发送 Figma 启动请求";
   }catch(Exception ex){Feedback.Text=ex.Message;}
  }
+ void UninstallFigma(object sender,RoutedEventArgs e){
+  if(busy)return;
+  if(Installer.IsRunning()){Feedback.Text="请先保存文档并正常退出 Figma，再卸载客户端。";return;}
+  try{
+   var target=FigmaCandidates.SelectedItem is FigmaLocator.Candidate candidate?candidate.Target:Installer.Target;
+   var plan=FigmaUninstaller.Resolve(target);
+   if(plan.OpensSettings){
+    if(!ThemeDialog.Ask(this,"卸载 Figma","未找到该安装目录的官方卸载程序。将打开 Windows 已安装的应用，请在那里选择 Figma 卸载。\n\n不会由本工具删除安装目录或设计文件。","打开已安装的应用"))return;
+   }else if(!ThemeDialog.Ask(this,"卸载 Figma","将启动 Figma 官方卸载程序，卸载此目录的整个客户端（包含 app-* 版本），不是仅删除所选旧版本。\n\n"+plan.InstallRoot+"\n\n本工具的扩展和备份会保留。确认继续？","卸载 Figma",true))return;
+   FigmaUninstaller.Launch(plan);reviewedHash=null;reviewedPayload=null;
+   Feedback.Text=plan.OpensSettings?"已打开系统应用管理；请手动选择 Figma。":"已启动官方卸载程序；完成后点击重新检测。";
+  }catch(Exception ex){Feedback.Text="无法启动卸载："+ex.Message;}
+ }
  async void CloseFigma(object sender,RoutedEventArgs e){
   if(busy)return;
   var count=Process.GetProcessesByName("Figma");var total=count.Length;foreach(var process in count)process.Dispose();

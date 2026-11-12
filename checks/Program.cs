@@ -33,3 +33,7 @@ Installer.Apply(Installer.Hash(Installer.Target),Installer.ReviewFingerprint());
 Installer.TestRunning=()=>true;Assert(!Installer.CanApply(),"running client blocks mutation");Installer.TestRunning=()=>false;
 Installer.Restore();Assert(input.SequenceEqual(File.ReadAllBytes(Installer.Target)),"restore returns original synthetic archive");
 Console.WriteLine("All installer checks used disposable synthetic files: "+sandbox);
+
+var uninstallRoot=Path.Combine(sandbox,"uninstall-fixture");var uninstallApp=Path.Combine(uninstallRoot,"app-1.2.3");Directory.CreateDirectory(Path.Combine(uninstallApp,"resources"));var uninstallTarget=Path.Combine(uninstallApp,"resources","app.asar");File.WriteAllText(uninstallTarget,"fixture");File.WriteAllText(Path.Combine(uninstallApp,"Figma.exe"),"");File.WriteAllText(Path.Combine(uninstallRoot,"Update.exe"),"");
+var uninstallPlan=FigmaUninstaller.Resolve(uninstallTarget);Assert(!uninstallPlan.OpensSettings&&uninstallPlan.InstallRoot==uninstallRoot&&uninstallPlan.Arguments=="--uninstall","official uninstall plan targets whole installation; never launched in tests");
+File.Delete(Path.Combine(uninstallRoot,"Update.exe"));Assert(FigmaUninstaller.Resolve(uninstallTarget).OpensSettings,"missing uninstaller falls back to Windows settings without deleting files");
