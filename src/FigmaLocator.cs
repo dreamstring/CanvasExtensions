@@ -17,8 +17,9 @@ public static class FigmaLocator {
  }
  public static void Select(string value){var path=Normalize(value);Directory.CreateDirectory(ExtensionCatalog.Home);File.WriteAllText(Config,JsonSerializer.Serialize(path));selected=path;}
  public static string Resolve(){
-  if(selected!=null)return selected;
-  try{if(File.Exists(Config)){var saved=JsonSerializer.Deserialize<string>(File.ReadAllText(Config));if(!string.IsNullOrEmpty(saved))return selected=Path.GetFullPath(saved);}}catch{}
+  if(selected!=null&&File.Exists(selected))return selected;
+  selected=null;
+  try{if(File.Exists(Config)){var saved=JsonSerializer.Deserialize<string>(File.ReadAllText(Config));if(!string.IsNullOrEmpty(saved)&&File.Exists(saved))return selected=Path.GetFullPath(saved);}}catch{}
   var candidates=Discover();if(candidates.Count==0)throw new IOException("未找到 Figma。已检查运行进程、注册表和常见安装目录；请手动指定 Figma.exe。");
   return selected=candidates.OrderByDescending(c=>c.Source=="运行进程").ThenByDescending(c=>Version.TryParse(c.Version,out var v)?v:new Version()).First().Target;
  }

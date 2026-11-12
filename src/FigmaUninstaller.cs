@@ -18,6 +18,10 @@ public static class FigmaUninstaller {
    if((entry.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException("版本目录中包含链接，拒绝移除。");
    if(entry is DirectoryInfo child)pending.Push(child);
   }
+  var newer=app.Parent!.EnumerateDirectories("app-*").Any(other=>
+   Version.TryParse(other.Name[4..],out var version)&&version>Version.Parse(app.Name[4..])&&
+   (other.Attributes&FileAttributes.ReparsePoint)==0&&File.Exists(Path.Combine(other.FullName,"Figma.exe"))&&File.Exists(Path.Combine(other.FullName,"resources","app.asar")));
+  if(!newer)throw new IOException("只能清理旧版本；必须保留同一安装目录中的最新可用版本。当前版本不会被移除。");
   return new(archive,app.FullName,app.Name[4..]);
  }
  public static void Remove(Plan reviewed){

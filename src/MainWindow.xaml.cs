@@ -24,7 +24,17 @@ public partial class MainWindow : Window {
   SourceInitialized+=(_,_)=>NativeTitleBar.Apply(this,light);StateChanged+=(_,_)=>RefreshCaption();RefreshCaption();
   processTimer.Tick+=(_,_)=>{RefreshExternalState();RefreshGate();};Activated+=(_,_)=>{RefreshExternalState();RefreshGate();};processTimer.Start();RefreshGate();Closed+=(_,_)=>{processTimer.Stop();bridge.Dispose();};
  }
- void LoadFigmaCandidates(){try{var list=FigmaLocator.Discover();FigmaCandidates.ItemsSource=list;string? target=null;try{target=Installer.Target;FigmaPathInput.Text=target;}catch{}FigmaCandidates.SelectedItem=list.FirstOrDefault(x=>string.Equals(x.Target,target,StringComparison.OrdinalIgnoreCase));}catch(Exception ex){Feedback.Text=ex.Message;}}
+ void FigmaSelectionChanged(object sender,SelectionChangedEventArgs e){if(RemoveVersionButton!=null)RemoveVersionButton.IsEnabled=!busy&&FigmaCandidates.SelectedItem is FigmaLocator.Candidate&&FigmaCandidates.Items.Count>1;}
+ void LoadFigmaCandidates(){
+  FigmaPathInput.Text="";
+  try{
+   var list=FigmaLocator.Discover();FigmaCandidates.ItemsSource=list;
+   FigmaDiscoveryHint.Text=list.Count==0?"未找到可用的 Figma 安装。客户端可能已卸载或文件不完整，请先重新安装 Figma，再点击重新检测。":"请选择版本；仅允许清理旧版本，保留最新可用版本。";
+   string? target=null;try{target=Installer.Target;FigmaPathInput.Text=target;}catch{}
+   FigmaCandidates.SelectedItem=list.FirstOrDefault(x=>string.Equals(x.Target,target,StringComparison.OrdinalIgnoreCase));
+   RemoveVersionButton.IsEnabled=!busy&&list.Count>1&&FigmaCandidates.SelectedItem!=null;
+  }catch(Exception ex){FigmaCandidates.ItemsSource=null;RemoveVersionButton.IsEnabled=false;FigmaDiscoveryHint.Text=ex.Message;Feedback.Text=ex.Message;}
+ }
  void FindFigma(object sender,RoutedEventArgs e)=>LoadFigmaCandidates();
  void UseFigmaCandidate(object sender,RoutedEventArgs e){if(FigmaCandidates.SelectedItem is FigmaLocator.Candidate item)SelectFigmaTarget(item.Target);}
  void UseFigmaPath(object sender,RoutedEventArgs e)=>SelectFigmaTarget(FigmaPathInput.Text);
@@ -68,7 +78,7 @@ public partial class MainWindow : Window {
    if(string.Equals(Installer.Target,plan.Target,StringComparison.OrdinalIgnoreCase)&&FigmaCandidates.Items.OfType<FigmaLocator.Candidate>().FirstOrDefault() is { } remaining){FigmaLocator.Select(remaining.Target);LoadFigmaCandidates();}
    RefreshInstallation();Feedback.Text="所选版本已移入回收站；其他版本未移除。";
   }catch(Exception ex){Feedback.Text="移除未完成："+ex.Message;}
-  finally{busy=false;FigmaCandidates.IsEnabled=true;RefreshGate();}
+  finally{busy=false;FigmaCandidates.IsEnabled=true;RemoveVersionButton.IsEnabled=FigmaCandidates.SelectedItem!=null&&FigmaCandidates.Items.Count>1;RefreshGate();}
  }
  async void CloseFigma(object sender,RoutedEventArgs e){
   if(busy)return;
