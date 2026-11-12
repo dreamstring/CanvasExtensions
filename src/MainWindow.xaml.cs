@@ -55,18 +55,20 @@ public partial class MainWindow : Window {
    Process.Start(new ProcessStartInfo(executable){UseShellExecute=true,WorkingDirectory=Path.GetDirectoryName(executable)!});Feedback.Text="已发送 Figma 启动请求";
   }catch(Exception ex){Feedback.Text=ex.Message;}
  }
- void UninstallFigma(object sender,RoutedEventArgs e){
+ async void UninstallFigma(object sender,RoutedEventArgs e){
   if(busy)return;
-  if(Installer.IsRunning()){Feedback.Text="请先保存文档并正常退出 Figma，再卸载客户端。";return;}
+  if(FigmaCandidates.SelectedItem is not FigmaLocator.Candidate candidate){Feedback.Text="请先在列表中选择要移除的版本。";return;}
+  if(Installer.IsRunning()){Feedback.Text="请先保存文档并正常退出全部 Figma 进程，再移除版本。";return;}
   try{
-   var target=FigmaCandidates.SelectedItem is FigmaLocator.Candidate candidate?candidate.Target:Installer.Target;
-   var plan=FigmaUninstaller.Resolve(target);
-   if(plan.OpensSettings){
-    if(!ThemeDialog.Ask(this,"卸载 Figma","未找到该安装目录的官方卸载程序。将打开 Windows 已安装的应用，请在那里选择 Figma 卸载。\n\n不会由本工具删除安装目录或设计文件。","打开已安装的应用"))return;
-   }else if(!ThemeDialog.Ask(this,"卸载 Figma","将启动 Figma 官方卸载程序，卸载此目录的整个客户端（包含 app-* 版本），不是仅删除所选旧版本。\n\n"+plan.InstallRoot+"\n\n本工具的扩展和备份会保留。确认继续？","卸载 Figma",true))return;
-   FigmaUninstaller.Launch(plan);reviewedHash=null;reviewedPayload=null;
-   Feedback.Text=plan.OpensSettings?"已打开系统应用管理；请手动选择 Figma。":"已启动官方卸载程序；完成后点击重新检测。";
-  }catch(Exception ex){Feedback.Text="无法启动卸载："+ex.Message;}
+   var plan=FigmaUninstaller.Resolve(candidate.Target);
+   if(!ThemeDialog.Ask(this,"移除所选 Figma 版本",$"将仅把 Figma {plan.Version} 的版本目录移入回收站：\n\n{plan.VersionDirectory}\n\n其他版本、账户数据、扩展及备份会保留。更新器可能再次下载此版本。若移除当前使用的版本，请重新选择保留的版本。","移除所选版本",true))return;
+   busy=true;FigmaCandidates.IsEnabled=false;
+   await Task.Run(()=>FigmaUninstaller.Remove(plan));
+   reviewedHash=null;reviewedPayload=null;LoadFigmaCandidates();
+   if(string.Equals(Installer.Target,plan.Target,StringComparison.OrdinalIgnoreCase)&&FigmaCandidates.Items.OfType<FigmaLocator.Candidate>().FirstOrDefault() is { } remaining){FigmaLocator.Select(remaining.Target);LoadFigmaCandidates();}
+   RefreshInstallation();Feedback.Text="所选版本已移入回收站；其他版本未移除。";
+  }catch(Exception ex){Feedback.Text="移除未完成："+ex.Message;}
+  finally{busy=false;FigmaCandidates.IsEnabled=true;RefreshGate();}
  }
  async void CloseFigma(object sender,RoutedEventArgs e){
   if(busy)return;
