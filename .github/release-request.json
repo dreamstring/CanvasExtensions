@@ -1,5 +1,7 @@
 {
   "version": "0.6.6",
-  "revision": "box-nine-slice-accepted",
-  "notes": "新增 Box 九宫格填充 0.1.6：在图片 Fill 弹窗设置百分比／像素边距，保留边角随尺寸重绘，支持恢复原图。修复分数像素边界导致的 GPU 接缝，已通过实机验收。公共挂载接口与兼容资源登记同步更新。\n\n下载 CanvasExtensions-0.6.6-win-x64.exe，自包含单文件。附送 GIF 0.2.8、纹理导出 0.2.6、Box 0.1.6，三个扩展与外置扩展使用相同机制。保存并退出 Figma 后重新应用扩展；现有自定义扩展不会自动覆盖，请从仓库 modules/box 更新 Box 文件。\n\nAdds Box 0.1.6 nine-slice image fill with percentage/pixel margins, resize redraw and source restoration. GPU seams fixed by shared pixel-aligned output boundaries. Includes the three ordinary directory extensions; no .NET installation required. Quit Figma before reapplying. Existing custom module files are preserved, so update an existing Box directory from modules/box when upgrading.\n\nhttps://github.com/dreamstring/CanvasExtensions"
+  "revision": "gif-selection-idle-optimization",
+  "tag": "v0.6.6-gif-0.2.10",
+  "title": "Canvas Extensions 0.6.6 · GIF 0.2.10",
+  "notes": "优化 GIF 空闲识别：选区稳定 250ms 后才识别；仅自动读取直接选中的图片，容器子层按 Preview 再识别；串行读取、签名缓存复用，快速切换取消旧任务。\n\n主程序仍为 0.6.6，内附 GIF 0.2.10、纹理导出 0.2.6、Box 0.1.6。下载自包含 EXE，无需安装 .NET。已有用户的扩展文件会保留；升级 GIF 请将仓库 modules/gif 中的文件复制到用户扩展目录对应的 gif 文件夹，然后保存并退出 Figma，重新应用扩展。\n\nImproves idle GIF detection: wait for a stable selection, read directly selected images serially, defer container descendants to Preview, reuse cached signatures and cancel stale tasks. Host version stays 0.6.6; bundles GIF 0.2.10, texture export 0.2.6 and Box 0.1.6. Existing user modules are preserved: replace the gif directory with modules/gif before reapplying with Figma closed."
 }
