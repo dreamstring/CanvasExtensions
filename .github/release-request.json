@@ -1,7 +1,7 @@
 {
   "version": "0.6.6",
-  "revision": "gif-selection-idle-optimization",
-  "tag": "v0.6.6-gif-0.2.10",
-  "title": "Canvas Extensions 0.6.6 · GIF 0.2.10",
-  "notes": "优化 GIF 空闲识别：选区稳定 250ms 后才识别；仅自动读取直接选中的图片，容器子层按 Preview 再识别；串行读取、签名缓存复用，快速切换取消旧任务。\n\n主程序仍为 0.6.6，内附 GIF 0.2.10、纹理导出 0.2.6、Box 0.1.6。下载自包含 EXE，无需安装 .NET。已有用户的扩展文件会保留；升级 GIF 请将仓库 modules/gif 中的文件复制到用户扩展目录对应的 gif 文件夹，然后保存并退出 Figma，重新应用扩展。\n\nImproves idle GIF detection: wait for a stable selection, read directly selected images serially, defer container descendants to Preview, reuse cached signatures and cancel stale tasks. Host version stays 0.6.6; bundles GIF 0.2.10, texture export 0.2.6 and Box 0.1.6. Existing user modules are preserved: replace the gif directory with modules/gif before reapplying with Figma closed."
+  "revision": "r2",
+  "tag": "v0.6.6-r2",
+  "title": "Canvas Extensions 0.6.6 · Rev.2",
+  "notes": "## 中文\n同一主程序版本的第二次发行包修订，主程序保持 0.6.6。\n\n- **Box 九宫格填充 0.1.6**：在图片 Fill 弹窗设置百分比／像素四边厚度，保留边角，随对象尺寸重绘；支持恢复原图，修复分数像素造成的接缝。\n- **GIF 画布预览 0.2.10**：选区稳定 250ms 后识别，只自动读取直接选中的图片；容器子层点击 Preview 再读取，串行识别并复用缓存。\n- 附送纹理批量导出 0.2.6；三个扩展均采用与外置扩展相同的模块机制。\n\n下载 **CanvasExtensions-0.6.6-r2-win-x64.exe**，自包含，无需安装 .NET。\n已有扩展不会自动覆盖。升级时将仓库 modules/gif（以及尚未安装的 modules/box）复制到用户扩展目录对应文件夹，保存并退出 Figma 后重新应用扩展。\n\n## English\nSecond bundle revision of host 0.6.6; the host version is unchanged.\n\n- Box 0.1.6: percentage/pixel nine-slice margins, preserved corners, resize redraw, source restoration and pixel-aligned seam fixes.\n- GIF 0.2.10: debounced selection detection, serial direct-image reads, signature caching and on-demand container scans.\n- Includes texture export 0.2.6. All three bundled modules use the external extension mechanism.\n\nDownload the self-contained EXE. Existing user modules are preserved: update modules/gif and modules/box in your extension directory, quit Figma and reapply.\n\n![Extension manager](https://raw.githubusercontent.com/dreamstring/CanvasExtensions/main/docs/screenshots/extensions.png)\n"
 }

@@ -6,7 +6,9 @@ if(!process.env.GITHUB_ACTIONS||!process.env.GH_REPO||!process.env.GITHUB_SHA)th
 function gh(args){return cp.execFileSync('gh',args,{encoding:'utf8'});}
 const tag=request.tag||'v'+version;
 if(!/^v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$/.test(tag))throw Error('Invalid release tag');
-const file=path.resolve('share/CanvasExtensions-'+version+'-win-x64.exe');
+const built=path.resolve('share/CanvasExtensions-'+version+'-win-x64.exe');
+const file=path.resolve('share/CanvasExtensions-'+tag.slice(1)+'-win-x64.exe');
+if(file!==built)fs.copyFileSync(built,file);
 const notes=path.join(os.tmpdir(),'canvas-release-notes.md');fs.writeFileSync(notes,request.notes+'\n\nSource: '+process.env.GITHUB_SHA+'\n');
 let found=false;try{gh(['release','view',tag]);found=true;}catch(error){if(!String(error.stderr).includes('release not found'))throw error;}
 if(!found)gh(['release','create',tag,'--target',process.env.GITHUB_SHA,'--title',request.title||'Canvas Extensions '+version,'--notes-file',notes]);

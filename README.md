@@ -18,9 +18,11 @@ Canvas Extensions 是一个通用的 Figma 桌面端扩展注入器。主程序�
 | 纹理批量导出 | 0.2.6 | PNG 批量导出，16 倍数／二次幂尺寸、取整规则、命名前缀、手动尺寸和输出目录 |
 | Box 九宫格填充 | 0.1.6 | 图片填充中设置百分比／像素边距，保留边角并随对象尺寸重绘，支持恢复原图 |
 
+当前发行包：**0.6.6-r2**。`r2` 表示同一主程序版本的第二次打包修订；主程序和各扩展仍独立编号。
+
 ### 安装和使用
 
-1. 从 Release 下载 `CanvasExtensions-0.6.6-win-x64.exe`。Windows x64 自包含单文件，无需另装 .NET。
+1. 从 Release 下载 `CanvasExtensions-0.6.6-r2-win-x64.exe`。Windows x64 自包含单文件，无需另装 .NET。
 2. 打开程序，在扩展列表选择启用项。在“安装与诊断”确认 Figma 安装位置并检查兼容性。
 3. 保存设计，正常退出 Figma，点击“应用扩展（注入）”，然后重新打开 Figma Design 文档。
 4. 在 Figma 右侧属性栏使用扩展。成功安装后每次打开文档自动加载，管理器无需常驻。
@@ -106,3 +108,5 @@ Copyright © 2026 Dring Qian (dreamstring). Project code: **GPL-3.0-only**, see 
 GIF 识别在选区稳定 250ms 后启动，仅自动读取直接选中的图片，不遍历容器子层；容器内图片点击 Preview 再识别。每次最多读取 8 张未缓存图片、串行读取，250ms 后不再启动新读取。识别不会启动动画；签名缓存复用。单张完整图片读取仍可能有短暂开销。
 
 GIF recognition starts after the selection settles for 250ms. Only directly selected images are read automatically; container descendants are scanned on Preview. Each inspection reads at most 8 uncached images serially and starts no new reads after 250ms. Signatures are cached and detection never starts animation. Reading one complete image can still incur a temporary cost.
+
+Bundle revisions use `rN` (for example, `0.6.6-r2`); they do not change the host or module versions. The manager screenshot is rendered from the real WPF controls using RenderTargetBitmap, with isolated module settings.
