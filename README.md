@@ -2,7 +2,7 @@
 
 **Canvas Extensions 0.7.0** 为 Windows 版 Figma Desktop 提供画布 GIF 预览、纹理批量导出和图片九宫格填充。开发者可使用 SDK 2.6，把自己的控件挂到已有面板，或创建独立侧栏。
 
-[下载 Standalone / Releases](https://github.com/dreamstring/CanvasExtensions/releases/latest) · [SDK](SDK.md) · [组件接口](SDK-COMPONENTS.md) · [English](#english)
+[下载 Standalone / Releases](https://github.com/dreamstring/CanvasExtensions/releases/latest) · [SDK 开发手册](SDK.md) · [English](#english)
 
 ![Canvas Extensions extension manager](docs/screenshots/extensions-0.7.0.png)
 
@@ -80,7 +80,7 @@ window.FigmaExtensions.sdk.define({
 });
 ```
 
-重新扫描、启用、应用扩展后生效。字体、主题、禁用态、持久化与事件清理由 SDK 处理。复杂面板可使用组合接口与底层 API。参阅 [SDK](SDK.md)、[组合组件](SDK-COMPONENTS.md) 和 `templates/`。
+重新扫描、启用、应用扩展后生效。字体、主题、禁用态、持久化与事件清理由 SDK 处理。复杂面板可使用组合接口与底层 API。参阅 [SDK](SDK.md)、[组合组件](SDK.md#组合面板与控件) 和 `templates/`。
 
 ### 构建
 
@@ -107,7 +107,7 @@ The three bundled extensions—GIF canvas preview, texture batch export and Box 
 
 Download the standalone Windows x64 EXE from Releases. Select your Figma installation, save your design and wait for sync. When an update is pending, confirm Apply to close all Figma processes, apply the extensions and launch the selected version. Installed extensions load automatically; the manager does not need to stay running. Reapply after changing modules or when a Figma update replaces its application archive.
 
-Build on Windows with .NET 9 and Node.js 22 using the commands above. Tests use synthetic inputs, mocked editor surfaces and real Skia raster pixels. `npm run test:box-gpu` optionally checks fractional-margin seams in an isolated headless Chromium profile. Start an extension from `templates/sdk-example`; see [SDK.md](SDK.md) and [SDK-COMPONENTS.md](SDK-COMPONENTS.md). Runtime compatibility depends on Figma's internal APIs; structural compatibility alone is not a guarantee.
+Build on Windows with .NET 9 and Node.js 22 using the commands above. Tests use synthetic inputs, mocked editor surfaces and real Skia raster pixels. `npm run test:box-gpu` optionally checks fractional-margin seams in an isolated headless Chromium profile. Start an extension from `templates/sdk-example`; see [SDK.md](SDK.md) and [组合面板与控件](SDK.md#组合面板与控件). Runtime compatibility depends on Figma's internal APIs; structural compatibility alone is not a guarantee.
 
 Module guides: [GIF](modules/gif/README.md) · [Texture export](modules/texture-export/README.md) · [Box](modules/box/README.md). Each follows the same documentation structure. Bundle revisions such as 0.6.6-r2 do not change host/module versions.
 

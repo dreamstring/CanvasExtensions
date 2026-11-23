@@ -33,7 +33,7 @@
 | 本地输出 | exportFiles；导出批次迁移，取消与异常清理测试，原生权限校验保留 |
 | 公共 UI | directoryField / preview / stylePreview；导出与 Box 迁移，声明式 path / imagePreview 测试 |
 | 通用储备 | scope、progressTask、undoGroup、resolveNode、loadFonts；独立成功、失败、取消与清理测试 |
-| 分层和交付 | services.js 不依赖 Figma；editor-services.js 适配编辑器；SDK-SERVICES.md 和 services-example 随包 |
+| 分层和交付 | services.js 不依赖 Figma；editor-services.js 适配编辑器；SDK.md 的公共服务章节 和 services-example 随包 |
 
 主程序 0.7.0，SDK 2.1；GIF 0.2.11、纹理导出 0.2.7、Box 0.1.7 独立版本，清单声明 minimumSdk。重复的选区延时、缓存、编码队列、批次清理与目录/预览控件已迁到公共层。
 
@@ -54,7 +54,7 @@
 
 ## SDK 2.4 以外置插件检验 API
 
-验收插件为 [SDK Playground](templates/sdk-playground)。四边边距可以通过预设、滑块、数字框、拖切线、键盘或命令修改。插件放入扩展目录后走普通发现、启用和载入流程；安装管理器默认不启用此测试面板。
+验收插件为 [SDK Playground](../../templates/sdk-playground)。四边边距可以通过预设、滑块、数字框、拖切线、键盘或命令修改。插件放入扩展目录后走普通发现、启用和载入流程；安装管理器默认不启用此测试面板。
 
 | 写插件时遇到的问题 | SDK 改进 | 验证方式 |
 | --- | --- | --- |

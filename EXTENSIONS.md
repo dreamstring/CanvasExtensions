@@ -17,6 +17,6 @@ take effect after reapplying and restarting Figma.
 - `checks/`: portable mocked runtime checks and synthetic archive installer checks.
 
 See [SDK.md](SDK.md) for the declarative API and lifecycle, and
-[SDK-COMPONENTS.md](SDK-COMPONENTS.md) for composable panels. Native capability
+[组合面板与控件](SDK.md#组合面板与控件) for composable panels. Native capability
 names currently include `export-png`, `open-export-folder` and
 `choose-export-folder`. The manifest is not an isolation sandbox.
