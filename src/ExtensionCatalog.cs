@@ -20,7 +20,7 @@ public static class ExtensionCatalog {
     try{
      var m=JsonSerializer.Deserialize<Manifest>(File.ReadAllText(Path.Combine(folder,"module.json")),Json)??throw new IOException("扩展清单为空");
      if(m.SchemaVersion!=1||(m.Id is null||!Regex.IsMatch(m.Id,"^[a-z][a-z0-9-]{0,47}$"))||string.IsNullOrWhiteSpace(m.Name)||m.Scripts is null||m.Scripts.Length==0||m.Commands is null||m.Commands.Any(c=>!Regex.IsMatch(c,"^[a-zA-Z][a-zA-Z0-9]{0,47}$"))||m.Commands.Distinct().Count()!=m.Commands.Length||m.Permission is not ("read-design" or "write-design"))throw new IOException("扩展清单格式不受支持");
-     if(m.MinimumSdk is not null&&(!Version.TryParse(m.MinimumSdk,out var required)||required>new Version(2,1,0)))throw new IOException("扩展需要更高版本 SDK："+m.MinimumSdk);
+     if(m.MinimumSdk is not null&&(!Version.TryParse(m.MinimumSdk,out var required)||required>new Version(2,6,0)))throw new IOException("扩展需要更高版本 SDK："+m.MinimumSdk);
      if(!ids.Add(m.Id))throw new IOException("扩展 ID 重复");
      if(m.NativeCapabilities?.Any(x=>x is not ("export-png" or "open-export-folder" or "choose-export-folder"))==true)throw new IOException("扩展声明了不受支持的本地能力");
      bool builtin=false;var extension=new Extension(m,folder,builtin,selection.GetValueOrDefault(m.Id,File.Exists(Path.Combine(folder,".bundled-seed"))),null);
@@ -58,6 +58,10 @@ public static class ExtensionCatalog {
   builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","native-ui.js")));
   builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","services.js")));
   builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","editor-services.js")));
+  builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","pointer-input.js")));
+  builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","ui-model.js")));
+  builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","ui-targets.js")));
+  builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","collections.js")));
   builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","sdk.js")));
   builder.Append(File.ReadAllText(Path.Combine(BundledAssets.Root,"runtime","component-kit.js")));
   foreach(var module in enabled){

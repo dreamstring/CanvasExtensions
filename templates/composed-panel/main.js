@@ -13,9 +13,10 @@ window.FigmaExtensions.sdk.compose({
   ]},
   {type:'segmented',key:'format',label:'格式',options:[{value:'png',label:'PNG'},{value:'jpg',label:'JPG'}]},
   {type:'slider',key:'scale',label:'比例',min:0.1,max:4,step:0.1},
+  {type:'label',text:ctx=>Math.round(ctx.state.scale*100)+'%'},
   {type:'row',columns:3,children:[
    {type:'button',key:'run',label:'执行',onClick:ctx=>ctx.status('设置：'+ctx.state.width+' × '+ctx.state.height)},
-   {type:'button',key:'outline',label:'次要按钮',variant:'outline'},
+   {type:'button',key:'outline',label:'重置尺寸',variant:'outline',onClick:ctx=>ctx.patch({manual:false,width:64,height:64,scale:1})},
    {type:'iconButton',key:'add',label:'添加',icon:'plus'}
   ]},
   {type:'disclosure',title:'Preview',children:[{type:'label',text:'可在这里组合预览或其他内容'}]}

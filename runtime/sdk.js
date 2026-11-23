@@ -15,6 +15,29 @@
    url(blob){const url=URL.createObjectURL(blob);this.add(()=>URL.revokeObjectURL(url));return url;}
   });
  }
+ // Mount one extension-owned action in a host toolbar and follow popup replacement.
+ function targetAction({target,label,icon,onPress,position,scope:owner}){
+  if(!label||typeof onPress!=='function')throw TypeError('A target action requires label and onPress');
+  const life=scope(),button=document.createElement('button');
+  button.type='button';
+  button.title=label;
+  button.setAttribute('aria-label',label);
+  button.style.cssText='display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border:0;padding:0 4px;border-radius:var(--radius-medium,5px);background:transparent;color:var(--color-icon,currentColor);font:inherit;cursor:pointer';
+  if(icon)button.append(host.componentKit.icon(icon));
+  else button.textContent=label;
+  function paint(){
+   const selected=button.getAttribute('aria-pressed')==='true';
+   button.style.background=selected?'var(--color-bg-selected,#444)':button.matches(':hover')?'var(--color-bg-hover,#383838)':'transparent';
+  }
+  try{
+   life.listen(button,'pointerenter',paint);
+   life.listen(button,'pointerleave',paint);
+   life.listen(button,'click',event=>{event.stopPropagation();onPress(event);});
+   host.sdk.targets.insert({target,position,element:button,scope:life});
+   owner?.add(life.dispose);
+  }catch(error){life.dispose();throw error;}
+  return {button,setPressed(value){button.setAttribute('aria-pressed',String(!!value));paint();},dispose:life.dispose};
+ }
  function panel(id,options){return host.createSection(id,options.title,options);}
  function define(spec){
   const id=spec.id,api=window.figma,life=scope(api),store=settings(id,spec.defaults||{},spec.storageKey),section=panel(id,spec.panel),controls=new Map();
@@ -59,5 +82,5 @@
   async exportPng(node){if(typeof node?.exportAsync!=='function')throw Error('对象不支持 PNG 导出');return await node.exportAsync({format:'PNG',constraint:{type:'SCALE',value:1}});},
   local(id){return Object.freeze({chooseFolder:directory=>host.nativeRequest(id,'choose-export-folder',{directory}),openFolder:directory=>host.nativeRequest(id,'open-export-folder',{directory})});}
  };
- host.sdk=Object.freeze({version:'2.1',services:window.CanvasExtensionServices,components:Object.freeze({directoryField:(...args)=>host.componentKit.directoryField(...args),preview:(...args)=>host.componentKit.preview(...args),stylePreview:(...args)=>host.componentKit.stylePreview(...args)}),compose:spec=>host.componentKit.compose(spec),ui:host.ui,settings,scope,panel,define,capabilities:Object.freeze(capabilities)});
+ host.sdk=Object.freeze({version:'2.6',collections:window.CanvasCollections,targets:window.CanvasUITargets,model:window.CanvasUIModel,services:window.CanvasExtensionServices,components:Object.freeze({targetAction,dragSurface:options=>window.CanvasPointerInput.dragSurface(options),directoryField:(...args)=>host.componentKit.directoryField(...args),preview:(...args)=>host.componentKit.preview(...args),stylePreview:(...args)=>host.componentKit.stylePreview(...args)}),compose:spec=>host.componentKit.compose(spec),ui:host.ui,settings,scope,panel,define,capabilities:Object.freeze(capabilities)});
 })();

@@ -64,3 +64,46 @@ Remaining: full native mouse/keyboard state comparison; normal checkbox (live sa
 Host/SDK changes: host version 0.5.1. This pass does not bump GIF or texture module versions. Existing extensions continue using their own custom panel bodies; adopting `compose()` can be done independently after visual regression checks. No silent rewrite of their business logic.
 
 SDK 2.1 增加 path、imagePreview 声明与公共目录/预览组件，详见 [公共服务](SDK-SERVICES.md#公共控件与清理)。
+
+## 定点挂载和状态联动
+
+`sdk.compose` 可用 `panel.target` 指定一个返回 DOM 容器或 null 的函数。例如扩展已有图片 Fill 弹窗定位器时，可直接传入该定位器。容器出现或被替换时，SDK 将同一面板挂过去，保留控件实例；扩展卸载时释放观察器。定位函数应当只读、廉价，且只返回宿主元素。面板沿用原有组件库的 Figma 主题变量与图标。
+
+```js
+sdk.compose({
+  id: 'scale-panel',
+  defaults: { manual: false, scale: 100 },
+  panel: {
+    title: 'Scale',
+    content: [
+      { type: 'checkbox', key: 'manual', label: '手动缩放' },
+      { type: 'slider', key: 'scale', label: '缩放', min: 10, max: 200,
+        enabled: ({ state }) => state.manual },
+      { type: 'label', text: ({ state }) => `当前缩放 ${state.scale}%` },
+      { type: 'button', label: '重置', onClick: ctx => ctx.patch({ manual: false, scale: 100 }) }
+    ]
+  }
+});
+```
+
+滑块每次触发 `input`、复选框触发 `change` 时，SDK 保存字段并刷新当前面板。命令或按钮可用 `ctx.patch({ manual: false, scale: 100 })` 将多个字段合并保存一次，同时更新控件值、启用状态和派生文本。直接修改 `ctx.state` 后调用 `ctx.refresh()` 仅更新显示。
+
+## SDK 2.3 组合字段和宿主按钮
+
+`panel.nativeStyle: true` 会为面板安装已有的原生样式适配层，读取 Figma 主题变量和可用的侧栏控件样式。自定义控件的交互由 SDK 实现。
+
+- 在 `content` 或 `children` 中传入返回节点描述的函数即可复用一组字段。函数在构建面板时运行。随状态变化的文本使用 `text: ctx => ...`。
+- `{ type: 'group', title, children, enabled, visible }` 支持嵌套。组禁用时，所有后代输入和按钮随之禁用；子项仍可有自己的条件。
+- `{ type: 'rangeField', key, label, min, max, step, unit }` 生成共享一个数值的滑块和数字输入框。滑动即时更新，键入数字后 Enter 或离开确认，Escape 撤回输入草稿。
+- `sdk.components.targetAction({ target, label, icon, onPress, scope })` 把按钮挂到解析函数指定的宿主。提供模块的 `ctx.scope` 后会自动清理。返回对象的 `setPressed(boolean)` 同步切换按钮的视觉及无障碍状态，`dispose()` 可提前移除按钮。
+- 用 `ctx.model.subscribe` 监听特定派生值；订阅的清理回调可中止过期预览。用 `ctx.patch` 同时更新多个设置。
+
+[Fill 面板完整示例](templates/fill-panel/main.js) 同时演示工具栏按钮和表单控制同一个开关、成组启用、滑块与数字联动、实时换算、重置及卸载清理。复制示例目录到扩展目录即可按常规方式加载。
+
+## SDK 2.4 自绘控件
+
+可以只替换表单中的一块。声明 `{ type: 'custom', key, label, mount(container, ctx, life) }`，在 container 中创建 DOM。通过 `ctx.patch` 提交编辑，通过 `ctx.model.subscribe` 接收预设和其他字段的更新。用 `life.listen` 注册 DOM 事件，用 `life.add` 托管取消订阅或资源释放，也可以从 mount 返回一个同步清理函数。声明式字段组的禁用会传到自绘区域，卸载和初始化失败都会释放已登记资源。
+
+[SDK Playground](templates/sdk-playground) 演示四个标准数值控件和可拖动的九宫切线共同编辑同一份状态。
+
+`sdk.components.dragSurface({ handle, surface, scope: life, onMove({ x, y }, event) { … } })` 将捕获的主指针位置换算为相对 surface 的 0 到 1 坐标，拖出边界时夹到边缘。pointerup 提交最后位置，取消或卸载释放捕获。插件仍可直接使用 DOM 事件，自行定义不同交互。

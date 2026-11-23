@@ -17,6 +17,18 @@ class Element{
  await new Promise(r=>setImmediate(r));const result=await registered.commands.exportSelection();assert.equal(result.completed,1);assert.equal(result.error,'');
  const output=fs.readFileSync(path.join(folder,'T_UI_sdk_64x64_001.png'));assert.equal(output.readUInt32BE(16),64);assert.equal(output.readUInt32BE(20),64);assert.equal(api.currentPage.selection[0].width,63);assert.ok(closed>0);assert.equal(calls[0][2],'prepare');assert.equal(calls.at(-1)[2],'finish');
  const controls=body.querySelectorAll('input');assert.ok(controls.some(c=>c.getAttribute('aria-label')==='输出目录'),'module uses SDK directory field');
+ const preview=body.querySelectorAll('details')[0];
+ let previewReads=0;
+ const source=api.currentPage.selection[0],originalExport=source.exportAsync;
+ source.exportAsync=async()=>{previewReads++;return originalExport();};
+ preview.open=true;preview.ontoggle();
+ await new Promise(r=>setTimeout(r,360));
+ assert.equal(previewReads,1,'opening Preview rasterizes the selected image once');
+ const directory=controls.find(c=>c.getAttribute('aria-label')==='输出目录');
+ directory.value='';directory.oninput();
+ await new Promise(r=>setTimeout(r,360));
+ assert.equal(previewReads,1,'changing only the output folder reuses the visible preview');
+ assert.ok(body.querySelectorAll('button').some(b=>b.textContent==='导出 1 张 PNG'&&b.disabled),'clearing output folder disables export');
  registered.dispose();assert.equal(handlers.size,0);assert.equal(timers.size,0);
  console.log('PASS migrated texture module: real shared SDK, directory field, serial export session, real Skia resize/PNG, unchanged node and lifecycle cleanup');
 })().catch(e=>{console.error(e);process.exit(1);});

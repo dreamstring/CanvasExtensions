@@ -1,5 +1,21 @@
 # Canvas Extensions SDK
 
+## SDK 2.5 集合与选择
+
+通过 [集合 SDK](SDK-COLLECTIONS.md) 构建可搜索、可选择的列表，或定制每项和详情的展示。命令面板与素材浏览器复用同一套集合接口。
+
+## SDK 2.4 交互测试扩展
+
+[SDK Playground](templates/sdk-playground) 演示声明式面板嵌入自绘交互，以及多字段预设的同步更新。
+
+## SDK 2.3 面板开发
+
+[宿主定位](SDK-TARGETS.md) · [状态模型](SDK-MODEL.md) · [组合控件](SDK-COMPONENTS.md) · [可运行的 Fill 面板](templates/fill-panel)
+
+## SDK 2.2 声明式面板
+
+定点挂载、派生文本、批量状态更新见 [组件说明](SDK-COMPONENTS.md)。使用这些接口的扩展可声明 `minimumSdk: "2.2"`。
+
 ## SDK 2.1 公共服务
 
 任务、图片、受控写回、文件批次、路径与预览控件见 [SDK-SERVICES.md](SDK-SERVICES.md)。示例位于 templates/services-example。旧面板接口保持兼容。

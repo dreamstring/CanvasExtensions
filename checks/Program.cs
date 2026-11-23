@@ -46,4 +46,16 @@ FigmaLocator.Select(uninstallTarget);File.Delete(uninstallTarget);try{Assert(!st
 
 var future=Path.Combine(ExtensionCatalog.CustomDirectory,"future-sdk");Directory.CreateDirectory(future);File.WriteAllText(Path.Combine(future,"main.js"),"void 0;");File.WriteAllText(Path.Combine(future,"module.json"),"{\"schemaVersion\":1,\"id\":\"future-sdk\",\"name\":\"Future\",\"version\":\"0.1.0\",\"minimumSdk\":\"99.0\",\"permission\":\"read-design\",\"scripts\":[\"main.js\"],\"commands\":[]}");Assert(ExtensionCatalog.List().Single(m=>m.Info.Id=="future-sdk").Error?.Contains("SDK")==true,"unsupported minimum SDK rejected before loading scripts");
 
-File.WriteAllText(Path.Combine(future,"module.json"),File.ReadAllText(Path.Combine(future,"module.json")).Replace("99.0","2.1.0"));Assert(ExtensionCatalog.List().Single(m=>m.Info.Id=="future-sdk").Error is null,"minimum SDK accepts equivalent three-part version 2.1.0");
+File.WriteAllText(Path.Combine(future,"module.json"),File.ReadAllText(Path.Combine(future,"module.json")).Replace("99.0","2.5.0"));Assert(ExtensionCatalog.List().Single(m=>m.Info.Id=="future-sdk").Error is null,"minimum SDK accepts equivalent three-part version 2.5.0");
+
+var exampleSource = Path.Combine(AppContext.BaseDirectory, "templates", "sdk-playground");
+var exampleFolder = Path.Combine(ExtensionCatalog.CustomDirectory, "sdk-playground");
+Directory.CreateDirectory(exampleFolder);
+foreach (var file in Directory.GetFiles(exampleSource))
+    File.Copy(file, Path.Combine(exampleFolder, Path.GetFileName(file)), true);
+var playground = ExtensionCatalog.List().Single(module => module.Info.Id == "sdk-playground");
+Assert(playground.Error is null && !playground.Enabled && playground.Info.MinimumSdk == "2.5",
+    "playground is discoverable as an optional SDK 2.5 extension");
+ExtensionCatalog.SetEnabled(playground.Info.Id, true);
+Assert(ExtensionCatalog.Payload().Contains(File.ReadAllText(Path.Combine(exampleFolder, "main.js")).TrimStart('\uFEFF')),
+    "enabling the playground loads its actual entrypoint into the payload");

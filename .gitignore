@@ -9,3 +9,4 @@ checks/generated/
 *.log
 
 node_modules/
+.collect-local-compatibility

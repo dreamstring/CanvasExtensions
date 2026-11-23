@@ -23,7 +23,7 @@
  const naming=document.createElement('div');naming.className='grid row';section.body.append(naming);
  field(naming,'前缀',input('prefix','T_UI_'));field(naming,'中间名称',input('middle','例如 xxx'));
  const pathRow=document.createElement('div');pathRow.className='row';section.body.append(pathRow);
- const directory=host.sdk.components.directoryField({value:settings.directory,placeholder:'例如 D:\\Textures\\UI',choose:value=>files.chooseFolder(value.trim()),onChange:value=>{settings.directory=value;save();render();},onError:error=>state.textContent=String(error.message||error)});pathRow.append(directory.root);lifecycle.add(()=>directory.dispose());
+ const directory=host.sdk.components.directoryField({value:settings.directory,placeholder:'例如 D:\\Textures\\UI',choose:value=>files.chooseFolder(value.trim()),onChange:value=>{settings.directory=value;save();render({refreshPreview:false});},onError:error=>state.textContent=String(error.message||error)});pathRow.append(directory.root);lifecycle.add(()=>directory.dispose());
 
  const manualRow=document.createElement('div');manualRow.className='row';section.body.append(manualRow);const manualLabel=document.createElement('label');manualLabel.style.cssText='display:flex;align-items:center;gap:6px';const manualToggle=document.createElement('input');manualToggle.type='checkbox';manualToggle.checked=settings.manualSize===true;manualToggle.style.cssText='width:14px;height:14px;margin:0;accent-color:var(--color-bg-brand,#0d99ff)';manualLabel.append(manualToggle,document.createTextNode('手动尺寸'));manualRow.append(manualLabel);const manualFields=document.createElement('div');manualFields.className='grid';manualRow.append(manualFields);const manualWidth=field(manualFields,'宽度',input('manualWidth','64')),manualHeight=field(manualFields,'高度',input('manualHeight','64'));for(const control of [manualWidth,manualHeight]){control.type='number';control.min='1';control.step='1';}manualToggle.onchange=()=>{settings.manualSize=manualToggle.checked;save();render();};
  const previews=document.createElement('div');previews.className='examples row';section.body.append(previews);
@@ -35,7 +35,7 @@
  const state=document.createElement('div');state.className='state';state.setAttribute('role','status');state.setAttribute('aria-live','polite');section.body.append(state);
  function save(){try{preferences.save();}catch(_){}lastError='';}
  function currentSelection(){return [...api.currentPage.selection].filter(node=>!node.removed&&Number(node.width)>0&&Number(node.height)>0);}
- function render(){
+ function render({refreshPreview=true}={}){
   if(disposed)return;
   if(!busy)selected=currentSelection();
   previews.replaceChildren();let plan=[],planError='';
@@ -49,7 +49,7 @@
   manualFields.classList.toggle('manual-disabled',busy||!settings.manualSize);
   manualWidth.disabled=busy||!settings.manualSize;manualHeight.disabled=busy||!settings.manualSize;
   if(!busy)state.textContent=planError||lastError;
-  section.show(busy||selected.length>0);if(!busy)schedulePreview();
+  section.show(busy||selected.length>0);if(!busy&&refreshPreview)schedulePreview();
  }
  const resizedPng=(bytes,width,height)=>services.resizePng(bytes,width,height);
  async function runExport(){

@@ -15,18 +15,16 @@ Canvas Extensions 是一个通用的 Figma 桌面端扩展注入器。主程序�
 | 预装扩展 | 独立版本 | 功能 |
 | --- | --- | --- |
 | [GIF 画布预览](modules/gif/README.md) | 0.2.11 | 在画布上预览 GIF，累加播放、停止所选，切换选择保留其他播放 |
-| [纹理批量导出](modules/texture-export/README.md) | 0.2.7 | PNG 批量导出，16 倍数／二次幂尺寸、取整规则、命名前缀、手动尺寸和输出目录 |
+| [纹理批量导出](modules/texture-export/README.md) | 0.2.8 | PNG 批量导出，16 倍数／二次幂尺寸、取整规则、命名前缀、手动尺寸和输出目录 |
 | [Box 九宫格填充](modules/box/README.md) | 0.1.7 | 图片填充中设置百分比／像素边距，保留边角并随对象尺寸重绘，支持恢复原图 |
 
-源码开发版本：**0.7.0 / SDK 2.1**，上述扩展版本属于此源码；已发布发行包不自动升级。
-
-当前发行包：**0.6.6-r2**。`r2` 表示同一主程序版本的第二次打包修订；主程序和各扩展仍独立编号。
+当前发行版为 **0.7.0**，内置 **SDK 2.6**。扩展独立编号。可选的 [SDK Playground](templates/sdk-playground/README.md) 演示面板、交互控件和挂载位置。
 
 ### 安装和使用
 
-1. 从 Release 下载 `CanvasExtensions-0.6.6-r2-win-x64.exe`。Windows x64 自包含单文件，无需另装 .NET。
+1. 从 Release 下载 `CanvasExtensions-0.7.0-win-x64.exe`。Windows x64 自包含单文件，无需另装 .NET。
 2. 打开程序，在扩展列表选择启用项。在“安装与诊断”确认 Figma 安装位置并检查兼容性。
-3. 保存设计，正常退出 Figma，点击“应用扩展（注入）”，然后重新打开 Figma Design 文档。
+3. 有更新时，先保存设计并等待同步，再点击“应用扩展（注入）”。确认后管理器会结束全部 Figma 进程，应用成功后启动所选版本。
 4. 在 Figma 右侧属性栏使用扩展。成功安装后每次打开文档自动加载，管理器无需常驻。
 
 新增、停用或更新扩展后，需要重新应用并重启 Figma。Figma 自身更新替换了安装资源时，也需要重新选择新版本并应用。可通过“恢复原始资源”移除加载入口。
@@ -103,7 +101,7 @@ Canvas Extensions is a general-purpose extension injector and manager for Figma 
 
 The three bundled extensions—GIF canvas preview, texture batch export and Box nine-slice fill—are ordinary directory modules. They are seeded into the same user extension folder and use the same manifest and SDK as third-party extensions. Existing local edits are preserved. Host and extension versions are independent.
 
-Download the standalone Windows x64 EXE from Releases. Select your Figma installation, save your design and quit Figma, apply the selected extensions, then reopen a Design document. Installed extensions load automatically; the manager does not need to stay running. Reapply after changing modules or when a Figma update replaces its application archive.
+Download the standalone Windows x64 EXE from Releases. Select your Figma installation, save your design and wait for sync. When an update is pending, confirm Apply to close all Figma processes, apply the extensions and launch the selected version. Installed extensions load automatically; the manager does not need to stay running. Reapply after changing modules or when a Figma update replaces its application archive.
 
 Build on Windows with .NET 9 and Node.js 22 using the commands above. Tests use synthetic inputs, mocked editor surfaces and real Skia raster pixels. `npm run test:box-gpu` optionally checks fractional-margin seams in an isolated headless Chromium profile. Start an extension from `templates/sdk-example`; see [SDK.md](SDK.md) and [SDK-COMPONENTS.md](SDK-COMPONENTS.md). Runtime compatibility depends on Figma's internal APIs; structural compatibility alone is not a guarantee.
 

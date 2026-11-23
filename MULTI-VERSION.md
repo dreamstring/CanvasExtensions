@@ -24,3 +24,5 @@ Tests: original installation unchanged; existing verified install/update/restore
 `runtime/compatibility.json` 随每次构建发布。注入成功后登记版本号、**原版 app.asar SHA-256**、验证范围与证据。安装器按原版哈希匹配，而不是只比较版本号；同版本资源不同仍走实验兼容。
 
 `injection` 只表示安装写入已成功；`startup-and-extensions` 表示还通过启动和扩展验收。Box 等模块的功能验收独立记录。126.11.8 已登记注入、启动和 Box 0.1.6 用户验收；其他模块与工作流的覆盖范围不能据此扩大。不得将仅通过结构检查的版本登记为成功。
+
+开发机可在仓库根目录创建空文件 `.collect-local-compatibility`（Git 忽略）。运行 `build-standalone.ps1` 时会先核对当前安装文件及原始备份的 SHA-256，将新的成功记录写回兼容清单并打包。已恢复或已被更新覆盖的安装无法通过当前文件核对。普通发行版不收集记录。

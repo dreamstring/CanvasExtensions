@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "test": "node scripts/check.cjs",
-    "test:box-gpu": "node checks/box-gpu-test.cjs"
+    "test:box-gpu": "node checks/box-gpu-test.cjs",
+    "test:ui-browser": "node checks/ui-browser-test.cjs && node checks/playground-browser-test.cjs"
   },
   "license": "GPL-3.0-only",
   "devDependencies": {

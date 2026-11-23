@@ -12,6 +12,12 @@
       "originalSha256": "65223ed24b6e8107852c71c1784984f13bfe6888fcef27b8c3d2461a81330641",
       "scope": "startup-and-extensions",
       "evidence": "2026-11-08: verified original resource hash; desktop startup and Box 0.1.6 accepted by user after GPU seam correction. This does not certify every extension workflow."
+    },
+    {
+      "version": "126.11.11",
+      "originalSha256": "9e9fb55054ddbd9936ebbdca19a69e1b9fe5519619444f8df6c922ec64e3c313",
+      "scope": "injection",
+      "evidence": "Installed app.asar and original backup both matched the SHA-256 values in the installation record."
     }
   ]
 }

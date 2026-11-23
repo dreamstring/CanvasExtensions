@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "fill-panel-example",
+  "name": "Fill 缩放参数示例",
+  "version": "0.2.0",
+  "minimumSdk": "2.6",
+  "description": "在填充弹窗中编辑缩放参数，仅保存面板设置。",
+  "permission": "read-design",
+  "scripts": ["main.js"],
+  "commands": []
+}

@@ -4,7 +4,7 @@
 
 ## 概览
 
-版本 **0.2.7** · 模块 ID `texture-export` · 权限 `read-design`，另声明受限的 PNG 写入、选择和打开目录能力。普通目录扩展。
+版本 **0.2.8** · 模块 ID `texture-export` · 权限 `read-design`，另声明受限的 PNG 写入、选择和打开目录能力。普通目录扩展。
 
 ## 使用
 
@@ -42,4 +42,4 @@ Figma 导出 PNG，Chromium Canvas 缩放编码，Electron 写入指定目录。
 
 ## English
 
-Texture export 0.2.7 resizes selected PNG exports to multiples of 16 or powers of two and writes named batches to a remembered directory. Manual dimensions use the same rounding rules. Design nodes remain unchanged. Limits, capabilities and validation scope are listed above.
+Texture export 0.2.8 resizes selected PNG exports to multiples of 16 or powers of two and writes named batches to a remembered directory. Manual dimensions use the same rounding rules. Design nodes remain unchanged. Limits, capabilities and validation scope are listed above.

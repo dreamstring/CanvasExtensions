@@ -51,8 +51,9 @@ public partial class MainWindow : Window {
  void RefreshGate(){
   if(busy)return;
   ApplyButton.Content=pending?"应用扩展（注入）":"重新注入";
-  try{var reason=Installer.ApplyBlockReason();
-   GateReason.Text=reason.Length>0?reason:pending?"Figma 已退出。可直接应用扩展，点击时会自动检查计划。":"当前已是最新版，仍可重新注入。完成后重新打开 Figma 生效。";
+  try{bool running=Installer.IsRunning();
+   var reason=pending&&running?(File.Exists(Installer.Target)?"":"安装路径已失效，请重新选择 Figma"):Installer.ApplyBlockReason();
+   GateReason.Text=reason.Length>0?reason:pending?(running?"有更新待应用。确认后将关闭 Figma、注入扩展并重新启动。":"有更新待应用。确认后将注入扩展并启动 Figma。"):"当前已是最新版，仍可重新注入。完成后重新打开 Figma 生效。";
    ApplyButton.IsEnabled=reason.Length==0;
   }catch(Exception ex){GateReason.Text=ex.Message;ApplyButton.IsEnabled=false;}
  }
@@ -61,9 +62,18 @@ public partial class MainWindow : Window {
  void OpenExtensions(object sender,RoutedEventArgs e){try{Directory.CreateDirectory(ExtensionCatalog.CustomDirectory);Process.Start(new ProcessStartInfo("explorer.exe",'"'+ExtensionCatalog.CustomDirectory+'"'){UseShellExecute=true});}catch(Exception ex){Feedback.Text=ex.Message;}}
  void StartFigma(object sender,RoutedEventArgs e){
   if(busy)return;
-  try{var executable=Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Installer.Target)!,"..","Figma.exe"));if(!File.Exists(executable))throw new FileNotFoundException("未找到 Figma 启动文件，请先检查安装路径。",executable);
-   Process.Start(new ProcessStartInfo(executable){UseShellExecute=true,WorkingDirectory=Path.GetDirectoryName(executable)!});Feedback.Text="已发送 Figma 启动请求";
-  }catch(Exception ex){Feedback.Text=ex.Message;}
+  try{LaunchFigma(FigmaExecutable());Feedback.Text="已发送 Figma 启动请求";}catch(Exception ex){Feedback.Text=ex.Message;}
+ }
+ static string FigmaExecutable(){
+  var path=Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Installer.Target)!,"..","Figma.exe"));
+  if(!File.Exists(path))throw new FileNotFoundException("未找到 Figma 启动文件，请检查安装路径。",path);
+  return path;
+ }
+ static void LaunchFigma(string executable){
+  using var process=Process.Start(new ProcessStartInfo(executable){UseShellExecute=true,WorkingDirectory=Path.GetDirectoryName(executable)!});
+ }
+ static void StopFigmaProcesses(){
+   var errors=new List<string>();foreach(var process in Process.GetProcessesByName("Figma")){using(process){try{if(!process.HasExited){process.Kill(entireProcessTree:true);if(!process.WaitForExit(5000))errors.Add($"进程 {process.Id} 仍在退出");}}catch(InvalidOperationException){}catch(Exception ex){errors.Add($"进程 {process.Id}：{ex.Message}");}}}if(Installer.IsRunning())throw new IOException("仍有 Figma 进程运行。"+string.Join("；",errors));
  }
  async void UninstallFigma(object sender,RoutedEventArgs e){
   if(busy)return;
@@ -86,9 +96,7 @@ public partial class MainWindow : Window {
   if(total==0){Feedback.Text="没有正在运行的 Figma 进程";RefreshGate();return;}
   if(!ThemeDialog.Ask(this,"关闭全部 Figma",$"将强制结束 {total} 个 Figma 进程，包括后台进程。\n\n未保存或尚未同步的内容可能丢失，请先保存文档。","关闭全部进程",true))return;
   busy=true;Feedback.Text="正在关闭全部 Figma 进程…";
-  try{var failures=await System.Threading.Tasks.Task.Run(()=>{
-   var errors=new List<string>();foreach(var process in Process.GetProcessesByName("Figma")){using(process){try{if(!process.HasExited){process.Kill(entireProcessTree:true);if(!process.WaitForExit(5000))errors.Add($"进程 {process.Id} 仍在退出");}}catch(InvalidOperationException){}catch(Exception ex){errors.Add($"进程 {process.Id}：{ex.Message}");}}}return errors;
-  });Feedback.Text=failures.Count==0?"全部 Figma 进程已关闭":"部分进程未关闭，请查看诊断";if(failures.Count>0){DiagnosticReport.Text=string.Join("\n",failures);DiagnosticExpander.IsExpanded=true;}}
+  try{await Task.Run(StopFigmaProcesses);Feedback.Text="全部 Figma 进程已关闭";}
   catch(Exception ex){Feedback.Text=ex.Message;}finally{busy=false;RefreshGate();}
  }
  void ReadDiagnostic(object sender,RoutedEventArgs e){try{var path=Installer.DiagnosticPath();string compatibility;try{compatibility=Installer.CompatibilityJson();}catch(Exception error){compatibility=error.Message;}DiagnosticReport.Text=runtimeConnection+"\n\n"+compatibility+"\n\n"+(File.Exists(path)?File.ReadAllText(path):"尚无加载诊断。请确认已应用扩展并重新打开 Figma。");}catch(Exception ex){DiagnosticReport.Text=ex.Message;}DiagnosticExpander.IsExpanded=true;}
@@ -102,9 +110,22 @@ public partial class MainWindow : Window {
     var prepared=await System.Threading.Tasks.Task.Run(()=>(Plan:Installer.PlanJson(),Hash:Installer.Hash(Installer.Target),Fingerprint:Installer.ReviewFingerprint()));
     Report.Text=prepared.Plan;reviewedHash=prepared.Hash;reviewedPayload=prepared.Fingerprint;
    }
+   string? launch=null;
+   if(!reinstall){
+    launch=FigmaExecutable();
+    bool running=Installer.IsRunning();
+    if(!ThemeDialog.Ask(this,"应用扩展并启动 Figma",running
+      ?$"请先保存文档并等待同步完成。确认后将强制关闭全部 Figma 进程（含后台进程），未保存的更改可能丢失。随后注入扩展并启动 Figma {Installer.TargetVersion}。"
+      :$"将向 Figma {Installer.TargetVersion} 注入所选扩展，完成后自动启动。",running?"关闭、应用并重启":"应用并启动",true)){
+     Feedback.Text="已取消更新";return;
+    }
+    if(running){Feedback.Text="正在关闭全部 Figma 进程…";await Task.Run(StopFigmaProcesses);}
+   }
+   Feedback.Text="正在注入扩展…";
    await System.Threading.Tasks.Task.Run(()=>Installer.Apply(reviewedHash,reviewedPayload));
-   reviewedHash=null;reviewedPayload=null;RefreshInstallation();Feedback.Text=reinstall?"已重新注入 · 请重新打开 Figma":"已注入 · 请重新打开 Figma";
-  }catch(Exception ex){reviewedHash=null;reviewedPayload=null;Report.Text=ex.Message;Feedback.Text="注入未完成，请查看计划";}
+   reviewedHash=null;reviewedPayload=null;RefreshInstallation();Feedback.Text="已重新注入 · 请重新打开 Figma";
+   if(launch!=null){try{LaunchFigma(launch);Feedback.Text="扩展已更新，已发送 Figma 启动请求";}catch(Exception ex){Feedback.Text="扩展已更新，启动 Figma 失败："+ex.Message;}}
+  }catch(Exception ex){reviewedHash=null;reviewedPayload=null;Report.Text=ex.Message;Feedback.Text="更新未完成："+ex.Message;}
   finally{busy=false;ExtensionList.IsEnabled=true;RefreshGate();}
  }
  async void Restore(object sender,RoutedEventArgs e){if(busy)return;if(Installer.IsRunning()){Feedback.Text="请先保存并正常退出 Figma";return;}if(!ThemeDialog.Ask(this,"恢复原始资源","恢复后将移除已注入扩展的加载入口。\n\n扩展文件和选择会保留，可以稍后重新注入。","恢复资源"))return;busy=true;try{await System.Threading.Tasks.Task.Run(Installer.Restore);reviewedHash=null;RefreshInstallation();Feedback.Text="已恢复原始资源";}catch(Exception ex){DiagnosticReport.Text=ex.Message;DiagnosticExpander.IsExpanded=true;Feedback.Text="恢复未完成，请查看诊断";}finally{busy=false;RefreshGate();}}

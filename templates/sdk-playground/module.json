@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "sdk-playground",
+  "name": "SDK Playground",
+  "version": "0.3.0",
+  "minimumSdk": "2.5",
+  "description": "八种交互面板：参数表单、工具条、素材、曲线、队列、向导、命令与图层矩阵",
+  "permission": "read-design",
+  "scripts": [
+    "browser-panel.js",
+    "curve-panel.js",
+    "forms.js",
+    "commands-panel.js",
+    "layers-panel.js",
+    "main.js"
+  ],
+  "commands": [
+    "reset"
+  ]
+}
