@@ -4,7 +4,9 @@
 
 [下载 Standalone / Releases](https://github.com/dreamstring/CanvasExtensions/releases/latest) · [SDK 开发手册](SDK.md) · [English](#english)
 
-![Canvas Extensions extension manager](docs/screenshots/extensions-0.7.0.png)
+![管理器已发现四个扩展，包括 SDK Playground 0.3.0](docs/screenshots/extensions-playground-0.7.0.png)
+
+图中展示三个预装扩展，以及另行安装、默认停用的 [SDK Playground](templates/sdk-playground/README.md)。
 
 ## 中文
 
