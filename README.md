@@ -1,10 +1,10 @@
 # Canvas Extensions
 
-A modular extension injector for **Figma Desktop on Windows**.
+**Canvas Extensions 0.7.0** 为 Windows 版 Figma Desktop 提供画布 GIF 预览、纹理批量导出和图片九宫格填充。开发者可使用 SDK 2.6，把自己的控件挂到已有面板，或创建独立侧栏。
 
 [下载 Standalone / Releases](https://github.com/dreamstring/CanvasExtensions/releases/latest) · [SDK](SDK.md) · [组件接口](SDK-COMPONENTS.md) · [English](#english)
 
-![Canvas Extensions extension manager](docs/screenshots/extensions.png)
+![Canvas Extensions extension manager](docs/screenshots/extensions-0.7.0.png)
 
 ## 中文
 
@@ -19,6 +19,10 @@ Canvas Extensions 是一个通用的 Figma 桌面端扩展注入器。主程序�
 | [Box 九宫格填充](modules/box/README.md) | 0.1.7 | 图片填充中设置百分比／像素边距，保留边角并随对象尺寸重绘，支持恢复原图 |
 
 当前发行版为 **0.7.0**，内置 **SDK 2.6**。扩展独立编号。可选的 [SDK Playground](templates/sdk-playground/README.md) 演示面板、交互控件和挂载位置。
+
+### SDK Playground 面板示例
+
+在九宫参数表单中拖动切线，滑块和百分比输入框会同步更新。另有素材浏览器、曲线编辑器、队列等七种交互可切换。查看[八个面板的截图、操作与实现入口](templates/sdk-playground/README.md)。
 
 ### 安装和使用
 

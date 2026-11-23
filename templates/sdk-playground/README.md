@@ -1,26 +1,55 @@
 # SDK Playground
 
-复制此目录到管理器的扩展目录，重新扫描并启用 SDK Playground，应用后重新打开 Figma Design。此示例需要 Canvas Extensions SDK 2.5。面板无需选中图层，只编辑自己的设置。
+在 Figma Design 右侧展开 **SDK Playground**，用「测试场景」切换八个面板。可以在空白文档中操作。素材、图层和队列都来自示例数据，适合观察控件如何响应同一份状态。
 
-选择「非对称」可载入左 12%、上 18%、右 32%、下 26% 的边距。拖动一条切线、滑块或输入百分比，观察另外两个控件与中心预览联动。「编辑边距」控制整组参数；「重置」恢复四边各 20%。
+将本目录复制到管理器「打开扩展目录」指向的位置，重新扫描、启用并应用扩展。示例版本为 **0.3.0**，最低要求 SDK 2.5，Canvas Extensions 0.7.0 随附 SDK 2.6。
 
-按 Tab 聚焦切线后可用方向键移动 1%，按住 Shift 移动 10%。Home 和 End 分别设置最小和最大厚度。同一方向的两条切线最多重合。键盘、鼠标以及数值编辑共用同一边距计算。
+## 九宫参数表单
 
-`main.js` 使用 `sdk.compose` 创建选择器、参数组、范围控件及自绘面板。自绘控件通过 `ctx.model.subscribe` 读取状态、`ctx.patch` 写回设置，并由 `life` 释放订阅和事件。可直接复用这些接口开发独立扩展。
+选择「非对称」，四条切线会移到左 12%、上 18%、右 32%、下 26% 的位置。拖动切线可以直接改变对应边距，滑块和输入框也会同步。取消「编辑边距」可观察整组控件的禁用状态。用 Tab 聚焦切线后，方向键每次移动 1%，按住 Shift 移动 10%。[表单与切线实现](main.js)
 
-## 面板形态实验
+![九宫边距与切线预览](../../docs/screenshots/playground/panel.png)
 
-从顶部「测试场景」切换。每个场景模拟一种交互结构；使用插件自带的数据，只有设置会写入扩展存储。
+## 紧凑对齐工具条
 
-| 场景 | 可试的操作 |
-| --- | --- |
-| 九宫参数表单 | 改一边的数值，拖动预览切线，用键盘微调 |
-| 紧凑对齐工具条 | 用三个动作即时改变下方图形排列 |
-| 素材浏览器 | 按关键词和类别过滤，在卡片与列表之间切换，查看详情和空状态 |
-| 缓动曲线编辑器 | 拖动两个控制点，调整数值，在指定时间取样 |
-| 任务队列 | 添加任务，观察模拟进度，中途取消再重新运行 |
-| 分步向导 | 选择范围和格式，返回修改，再确认模拟输出 |
+点左、中、右对齐，观察预览中的图形如何靠齐。三个动作共用一块预览区，适合只需点一次就能看到结果的操作。[工具条实现](forms.js)
 
-交互参考 Adobe 的 [Effects & Presets 与 Effect Controls](https://helpx.adobe.com/after-effects/desktop/apply-effects-and-animation-presets/effects-and-animation-presets/effects-animation-presets-overview.html)、[Graph Editor](https://helpx.adobe.com/after-effects/desktop/animate-in-after-effects/animation-basics/animation-basics.html) 和 [Render Queue](https://helpx.adobe.com/after-effects/desktop/render-and-export/basics-of-rendering-and-exporting/basics-rendering-exporting.html)。
+![对齐工具条](../../docs/screenshots/playground/toolbar.png)
 
-0.3.0 新增「命令面板」和「图层矩阵」。可在命令面板搜索和执行模拟命令，在图层矩阵独立切换可见与锁定、观察计数后恢复初始状态。这两个面板只修改 Playground 自身状态。素材浏览器和只读队列复用 SDK 2.5 的集合控件。
+## 素材浏览器
+
+用类别缩小范围，再输入素材名。切换卡片与列表可以比较两种浏览方式；选中素材后查看详情。输入没有匹配项的词可以检查空结果状态。[素材浏览器实现](browser-panel.js)
+
+![素材筛选与详情](../../docs/screenshots/playground/browser.png)
+
+## 缓动曲线编辑器
+
+从一个缓动预设开始，拖动两个控制点，或直接输入坐标。曲线随编辑重绘，预设切换为自定义。改变取样时间可以读取曲线上对应的输出值。[曲线编辑实现](curve-panel.js)
+
+![曲线与控制点](../../docs/screenshots/playground/curve.png)
+
+## 任务队列
+
+添加任务后点击「开始队列」，观察各行依次更新进度。中途取消，再次启动，能看到取消与完成两种状态。整个过程使用模拟任务。[队列实现](forms.js)
+
+![模拟任务队列](../../docs/screenshots/playground/queue.png)
+
+## 分步向导
+
+先选图层范围，再选输出格式。返回上一步时范围会保留；最后一步列出两项选择，方便在确认模拟输出前核对。[向导实现](forms.js)
+
+![分步向导的确认页](../../docs/screenshots/playground/wizard.png)
+
+## 命令面板
+
+搜索并选中「增加标记」，点击「执行命令」，可以看到执行回执。清空或改变搜索词会重新筛选命令；没有匹配项时，执行按钮禁用。[命令面板实现](commands-panel.js)
+
+![命令面板](../../docs/screenshots/playground/commands.png)
+
+## 图层矩阵
+
+每行对应一个示例图层。分别切换「可见」和「锁定」，观察两个计数独立变化；恢复初始状态可再次测试同一组操作。[图层矩阵实现](layers-panel.js)
+
+![图层矩阵](../../docs/screenshots/playground/layers.png)
+
+以上截图由 Chromium 加载本目录的面板脚本和仓库 SDK 后生成。浏览器检查覆盖拖动、键盘、场景切换及卸载清理。[交互检查](../../checks/playground-browser-test.cjs)

@@ -1,5 +1,9 @@
 # Canvas Extensions SDK
 
+## SDK 2.6 已有面板挂载点
+
+在已有面板中定位容器、插入控件并随宿主卸载。见[定位与挂载](SDK-TARGETS.md)和[Fill 示例](templates/fill-panel)。
+
 ## SDK 2.5 集合与选择
 
 通过 [集合 SDK](SDK-COLLECTIONS.md) 构建可搜索、可选择的列表，或定制每项和详情的展示。命令面板与素材浏览器复用同一套集合接口。

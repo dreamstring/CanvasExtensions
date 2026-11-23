@@ -181,6 +181,10 @@ async function exercise({evaluate,send}) {
  assert.deepEqual(await layerToggles(),{locked:true,visible:false});
  assert.equal(await evaluate(()=>panel.textContent.includes('可见 2 / 3 · 锁定 2 / 3')),true);
  await require('./panel-form-scenarios.cjs')(evaluate);
+ for(const scene of ['toolbar','queue','wizard','commands','layers']){
+  await evaluate(value=>choose('测试场景',value),scene);
+  await capturePanel(scene);
+ }
  await evaluate(()=>FigmaExtensions.dispose());
  assert.equal(await evaluate(()=>left.isConnected),false);
  const after=await evaluate(()=>localStorage.getItem('canvasExtensions.sdk-playground'));
